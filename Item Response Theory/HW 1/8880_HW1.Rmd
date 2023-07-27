@@ -1,0 +1,17 @@
+---
+title: "PSYGS8880_HW1"
+output: html_document
+date: "2023-01-25"
+---
+```{r}
+library("psychometric")
+library("polycor")
+library("ltm")
+```
+
+## Item analysis with psychometric
+```{r}
+item.exam(hw1_data, discrim=F)
+```
+
+

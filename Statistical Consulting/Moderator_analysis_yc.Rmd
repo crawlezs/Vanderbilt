@@ -1,0 +1,65 @@
+---
+title: "Corbet_moderators"
+author: "Youjin Chung"
+date: "2022-10-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr) #data wrangling
+library(haven) #data import
+library(summarytools) #descriptive stats
+library(tidyverse) # data wrangling
+```
+
+#Import data
+```{r import-data}
+data_original <- read_csv("C:/Users/chungy4/Documents/Corbett/Data/Corbett STM Dataset for Preacher_10.7.22 (1).csv")
+
+str(data_original)
+```
+
+#descriptive statistics
+```{r descriptives, echo=FALSE}
+#check for missing values
+summary(data_original)
+
+#calculate the number of missing values per participant
+table(rowSums(is.na(data_original))) #max of 6 missing values per participant
+
+data_original %>%
+  filter(rowSums(is.na(data_original))>0) %>%
+  view() 
+##44 participants have at least two missing values
+#(1) 4 students do not have any intervention data (will be removed)
+#(2) From (1), 4 students additionally do not have pre-test data (remove?)
+#(3) From (1), 22 students additionally do not have post-test data (but 6 of them have follow-up data)
+
+    ##investigate missing data
+    missing <- data_original %>%
+      filter(rowSums(is.na(data_original))>0)
+    
+    summary(missing)
+    freq(missing$group) # more people in control have missing data
+    freq(missing$sex) # more males have missing data
+    
+#####missing data between treatment and control groups
+    
+#demographics
+summary(data_original) 
+##mean age: 12.6
+##mean severity: 7.4 (3-10 range)
+##mean IQ: 98 (60-140 range)
+##outliers in dependent variables
+freq(data_original$group) #55% in treatment, 45% in control
+freq(data_original$sex) #71% male, 29% female
+
+hist(data_original$face_rep_pre)
+hist(data_original$face_rep_post)
+hist(data_original$face_sng_pre)
+hist(data_original$face_sng_post)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

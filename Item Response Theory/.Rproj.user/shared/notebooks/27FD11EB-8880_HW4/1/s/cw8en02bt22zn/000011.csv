@@ -1,0 +1,5 @@
+"0",""
+"0","#Result of ""Zh"" is residual-based statistic, which is explained in the 28th course slide. "
+"0","## Log-likelihood for AIC and BIC"
+"0",""
+"0","write.csv(personfit, ""personfit.csv"", row.names = TRUE)"

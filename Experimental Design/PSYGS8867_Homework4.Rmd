@@ -1,0 +1,75 @@
+
+```{r}
+bsas <- read.table('BSASgovern.dat')
+clep <- read.table('CLEP.dat')
+```
+
+```{r}
+```
+
+### Q1 ###
+
+In the file ’BSASgovern.dat’ are ratings from 786 respondents to the following 
+five questions on the 1996 British Social Attitudes Survey: on the whole do you 
+think it should or should not be the government’s responsibility to:
+  
+    - provide a job for everyone who wants one,
+    - keep prices under control
+    - provide a decent standard of living for the unemployed 
+    - reduce income differences between the rich and the poor
+    - provide decent housing for those who can’t afford it.
+
+Response alternatives are: 1=definitely should be; 2=probably should be; 
+3=probably should not be; 4=definitely should not be.
+
+### Q1.1 ###
+
+Obtain the polychoric correlation matrix and thresholds.
+
+```{r}
+
+```
+
+### Q1.2 ###
+
+Show how the thresholds of the first item can be calculated through the function qnorm. You can use the function table to obtain counts of the four categories.
+
+```{r}
+
+```
+
+### Q1.3 ###
+
+Calculate Pearson correlation matrix from the five ordered categorical variables directly, and compare to the polychoric correlation matrix. What do you observe?
+
+```{r}
+
+```
+
+### Q2 ###
+
+In the file CLEP.dat are scores on Social science and history, Verbal, and Science of 87 subjects. 
+
+### Q2.1 ###
+
+Find the means, covariance matrix and correlation matrix of the three variables.
+
+### Q2.2 ###
+
+Obtain histogram and QQplot (against normal distribution) for each of the variables. Add a line to the plots. For variable Verbal, explain how you infer the skewness of this variable from its QQplot.
+
+### Q2.3 ###
+
+Do Shapiro-Wilk test with each variable and obtain p-values. Draw conclusion based on Holm’s procedure.
+
+### Q2.4 ###
+
+Calculate the squared Mahalanobis distance d2 for each case in this sample. Report the case number associated with the largest d2. Do NOT remove.
+
+### Q2.5 ###
+
+Obtain a QQplot for d2 and add a reference line to the plot. What reference distribution should you use?
+
+### Q2.6 ###
+
+Do Shapiro-Wilk test for the d2. Draw conclusion.

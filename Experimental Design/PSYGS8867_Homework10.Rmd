@@ -1,0 +1,75 @@
+---
+title: "PSYGS8867_Homework10"
+output: html_document
+date: "2022-12-02"
+---
+1. The R package HSAUR2 contains a data set "voting". Read the help file of this dataset to learn its background. Run non-metric MDS for 1-6 dimensions each with 25 random starts.
+```{r}
+library(HSAUR2)
+```
+
+```{r}
+help("voting", package = "HSAUR2")
+
+# 15 x 15 matrix
+# number of times 15 congressman from NJ voted differently in HOR on 19 environmental bills
+
+data("voting", package = "HSAUR2")
+voting
+```
+
+
+```{r}
+mds.random<-function(data,k,r,type = "ordinal")
+{
+  stress<-rep(0,r)
+  min.stress<-Inf
+  for (i in 1:r) 
+  {
+    result<-mds(data,k,type=type,init="random")
+    stress[i]<-result$stress
+    if (stress[i]<min.stress) {best.result<-result;min.stress<-stress[i]}
+  }
+  return(list(stress=stress, best.result=best.result))
+}
+```
+
+```{r}
+result<-mds.random(data = Data,k=2,r=25)
+split.screen(c(1,2))
+```
+
+1.1 Plot the Stress values against the number of dimensions. How many dimensions does this plot suggest?
+
+```{r}
+screen(1)
+plot(result$stress)
+abline(h=result$best.result$stress)
+screen(2)
+plot(result$best.result)
+```
+
+1.2 What are the Stress values of the 2- and 3-dimensional solutions? How are they according to Kruskal’s guidelines?
+
+```{r}
+result<-lapply(1:6,FUN=mds.random,data=Data,r=50)
+stress<-rep(0,6)
+for (i in 1:6) stress[i]<-result[[i]]$best.result$stress
+plot(stress,ylab="Stress value")
+```
+
+```{r}
+stress
+```
+
+1.3 Display the map from the best 2D solution. Does party membership explain a part of voting disparities among these people? Explain.
+
+1.4 Display the Shepard diagram and the residual plot from this 2D solution. What features in these two plots show that the algorithm unties the ties in the data?
+`
+1.5 Display the Shepard diagram and the residual plot from the best 3D solution. Compare them to the plots of 1.4. How do you see that the 3D solution fits better than the 2D solution?
+
+2. Fifteen breakfast food items were evaluated by four individuals and a matrix of dissimilarities is obtained for each judge. The dissimilarities are rankings of pairwise dissimilarities. The data are in the file breakfast.dat.
+
+2.1 Perform non-metric MDS with 3 dimensions for each of the three options of the constraint argument. For each of the three models, use the default (Torgerson) starting value and display the Stress values. What is the assumption underlying each of the three options for constraint? Which of them is the most flexible and which is the least flexible? How does the flexibility related to the Stress values?
+
+2.2 Run non-metric INDSCAL with 2 dimensions using the default Torgerson starting value. Display the plot of food on the common map. Also plot the individual map of source 2 and make the ranges of x and y axes of this plot comparable to those of the common map. Display the transformation matrices for source 2. Compare the two plots and explain how the transformation matrices are related to the differences between these two plots.

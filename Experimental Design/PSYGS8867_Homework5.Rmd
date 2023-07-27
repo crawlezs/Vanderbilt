@@ -1,0 +1,64 @@
+---
+title: "PSYGS8867_Homework9"
+output: html_document
+date: "2022-11-17"
+---
+The data set UScitiesD (in R base) contains distances among 10 U.S. cities.
+
+```{r}
+data <- as.matrix(UScitiesD)
+```
+
+### 1 Run classical MDS and plot the eigenvalues. How many dimensions does the plot recommend?
+
+```{r}
+result <- cmdscale(data, k=2, eig=TRUE)
+plot(result$eig)
+abline(h=0)
+```
+The plot suggests 2 dimensions.
+
+### 2 Plot the solution for two dimensions. How is it related to the actual map of the U.S.?
+
+```{r}
+plot(result$points,asp = 1,ylim=c(-2000,2000))
+text(result$points[,1],result$points[,2],labels=rownames(result$points),cex=.7,pos=2)
+```
+This map is similar to a map of the US except that is flipped both vertically and horizontally. 
+
+```{r}
+points<-result$points
+points[,2]<- -points[,2]
+plot(points,asp = 1,ylim=c(-2000,2000))
+text(points[,1],points[,2],labels=rownames(points),cex=.7,pos=2)
+```
+After rotating the map is now only flipped horizontally. 
+
+### 3. Show how the two GOF values in the solution can be calculated from the eigenvalues.
+
+```{r}
+#GOF values in solution
+result$GOF
+```
+
+```{r}
+#The first GOF takes the absolute values of the negative eigenvalues in its calculation
+
+eig <- result$eig
+eig_abs <- abs(eig)
+eig_abs
+
+#The second GOF treats eigenvalues as 0
+eig_0 <- replace(eig, 7:10, 0)
+eig_0
+```
+
+```{r}
+#GOF = proportion of total eigenvalues retained by two dimensions
+GOF1 <- (eig_abs[1] + eig_abs[2]) / (eig_abs[1] + eig_abs[2] + eig_abs[3] + eig_abs[4] + eig_abs[5] + eig_abs[6] + eig_abs[7] + eig_abs[8] + eig_abs[9] + eig_abs[10])
+GOF1
+
+GOF2 <- (eig_0[1] + eig_0[2]) / (eig_0[1] + eig_0[2] + eig_0[3] + eig_0[4] + eig_0[5] + eig_0[6] + eig_0[7] + eig_0[8] + eig_0[9] + eig_0[10])
+GOF2
+```
+

@@ -1,0 +1,77 @@
+---
+title: "8880_HW4"
+output: html_document
+date: "2023-04-01"
+---
+
+```{r}
+#load packages
+library(tidyverse)
+library(irtoys)
+library(ltm)
+library(mirt)
+library(eRm)
+```
+
+```{r}
+#import data
+poly <- read_csv("m@h.csv")
+poly <- poly[,1:17]
+poly <- na.omit(poly)
+```
+
+# Graded Response Model
+Item fit and person fit for GRM
+
+```{r}
+#Item parameters
+
+grm <- mirt(poly, 1, itemtype = 'graded', method = 'EM', SE = TRUE)
+coef.grm <- coef(grm, printSE = TRUE, as.data.frame = TRUE)
+coef.grm
+```
+```{r}
+# Person parameters
+theta <- fscores(grm, full.scores.SE = TRUE)
+theta[1:10,]
+write.table(theta, file = "hw4_grmtheta.txt", sep = "\t", row.names= F)
+```
+```{r}
+# Item fit
+itemfit <- mirt::itemfit(grm, na.rm=TRUE)
+itemfit
+
+write.csv(itemfit, "itemfit.csv", row.names = TRUE)
+```
+```{r}
+##Graphical approach
+itemfit(grm, group.bins=17, empirical.plot = 1, method = 'ML') 
+```
+
+
+```{r}
+## Person fit
+personfit <- mirt::personfit(grm, na.rm=TRUE)
+personfit
+
+#Result of "Zh" is residual-based statistic, which is explained in the 28th course slide. 
+## Log-likelihood for AIC and BIC
+
+write.csv(personfit, "personfit.csv", row.names = TRUE)
+```
+
+ 
+```{r}
+## fitting PCM in mirt for the comparison with GRM
+## If the data have more than two categories then a partial credit model is used instead 
+pcm <- mirt(poly, 1, itemtype='Rasch', method="EM", SE=TRUE) 
+```
+
+```{r}
+anova(pcm,grm)
+```
+
+
+
+
+

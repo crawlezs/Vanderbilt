@@ -1,0 +1,4 @@
+"0","library(HSAUR2)"
+"0","library(smacof)"
+"2","Error in library(smacof) : there is no package called ‘smacof’
+"

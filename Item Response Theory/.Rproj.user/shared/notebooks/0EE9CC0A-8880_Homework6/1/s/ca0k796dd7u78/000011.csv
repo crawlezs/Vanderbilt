@@ -1,0 +1,5 @@
+"0","#calculate DIF"
+"0","DIF <- lordif(y2,group2)"
+"2","Error in lordif(y2, group2) : 
+  nrow of resp.data and length of group are non-conformable
+"

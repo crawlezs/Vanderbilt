@@ -1,0 +1,49 @@
+---
+title: "PSYGS8880_LAB1"
+output: html_document
+date: "2023-01-25"
+---
+```{r}
+library("psychometric")
+library("polycor")
+library("ltm")
+```
+
+# Binary responses
+
+## Import binary data (binary.txt)
+```{r}
+binary <- read.table("lab1_binary.txt",header=TRUE) 
+
+binary[1:10,]
+```
+
+## Item analysis with psychometric
+```{r}
+item.exam(binary, discrim=T)
+```
+
+## Item analysis with ltm
+```{r}
+descript(binary)
+```
+
+# Polytomous responses
+
+## Import polytomous data (polytomous.txt)
+```{r}
+polytomous <- read.table("lab1_polytomous.txt",header=TRUE) 
+
+polytomous[1:10,]
+```
+
+## Item analysis with psychometric
+```{r}
+item.exam(polytomous, discrim=F)
+```
+
+## Item analysis with ltm
+```{r}
+descript(polytomous)
+```
+

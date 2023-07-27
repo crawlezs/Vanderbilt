@@ -1,0 +1,66 @@
+---
+title: "8880_HW3"
+output: html_document
+date: "2023-03-01"
+---
+#Set up
+```{r}
+## Call libraries eRm, ltm, and mirt
+library(eRm)
+library(ltm)
+library(mirt)
+```
+
+```{r}
+## Importing polytomous data (polytomous.txt)
+poly <- read.table("Lab 3/polytomous.txt",header=TRUE)
+poly[1:10,1:10] # Checking the first 10 rows and 10 columns
+```
+
+#Q1
+Report item parameter estimates and standard errors of a graded response model
+
+```{r}
+## Fitting a graded response model using 'mirt'
+# Item parameters
+ 
+grm <- mirt(poly, 1, itemtype='graded', method="EM", SE=TRUE)
+coef.grm <-coef(grm, printSE=TRUE, as.data.frame=TRUE)
+coef.grm
+```
+
+#Q2 
+Create and interpret item characteristic curves (ICCs) for a graded response model for three items habing distinct patterns
+
+```{r}
+# CCC
+itemplot(grm, 1) #CCC for item 1
+```
+
+#Q3
+Compare a target information curve you designed with test information curve from your real responses for a graded response model.
+
+```{r}
+# Item & test Information functions
+plot(grm, type = 'info') #test information for all items
+```
+
+#Q4
+Discuss the differences of the item location estimates between a general partial credit model and a graded response model
+
+```{r}
+## Fitting a graded response model using 'mirt'
+# Item parameters
+ 
+grm <- mirt(poly, 1, itemtype='graded', method="EM", SE=TRUE)
+coef.grm <-coef(grm, printSE=TRUE, as.data.frame=TRUE)
+Coef.grm
+```
+
+```{r}
+## Fitting a generalized partial credit model using 'ltm': Marginal MLE
+# Item parameters
+gpcm <- gpcm(poly, IRT.param = TRUE)
+summary(gpcm)
+```
+

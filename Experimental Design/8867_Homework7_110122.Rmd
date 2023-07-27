@@ -1,0 +1,123 @@
+---
+title: "8867_Homework7_110122"
+output: html_document
+date: "2022-11-01"
+---
+
+In the file TV.txt is a correlation matrix of how much respondents “really like to watch” the 10 TV programs: Professional Boxing(s), This Week, Today, World of Sport(s), Grandstand(s), Line-Up, Match of the Day(s), Panorama, Rugby Special(s), 24 Hours, where those marked with * are sport programs and the remaining are news programs. The sample size is quite large, but here we use  sample size 200 just for demonstrative purpose. 
+
+```{r}
+#load dataset
+tv_R <- read.table('TV.txt')
+tv_R <- as.matrix(tv_cor, rownames = FALSE)
+
+# add column names
+tv_names <- list("prof_box", "this_week", "today", "world_sports", "grandstands", "line-up", "match_day", "panorama", "rugby", "24")
+
+colnames(tv_R) <- c(tv_names)
+rownames(tv_R) <- c(tv_names)
+
+tv_R
+```
+
+**Q1. Create a screeplot and run parallel analysis (use 1, 000 replications, add error bars, and use 95th percentile for decision). What are the conclusions from screeplot and from parallel analysis?** 
+
+```{r}
+library(psych)
+
+# run paralell analysis
+fa.parallel(tv_R, fa = "pc", n.iter = 1000, error.bars = TRUE)
+```
+
+
+**Q2. Run PCA and retain 2 PCs, use an oblique target rotation. What is a proper target given the background of the 10 programs? What are the interpretation of the 2 components?** 
+
+```{r}
+# run PCA
+result.quartimin <- principal(tv_cor, 2, rotate = "quartimin")
+
+# extract loadings
+result.quartimin$loadings
+
+#extract weights
+result.quartimin$weights
+
+#extract structural matrix
+result.quartimin$Structure
+```
+
+```{r}
+# create target
+## PC1 - sports (1, 4, 5,7, 9)
+## PC2 - news (2, 3, 6, 8,10 )
+
+target <- make.keys(10, list(PC1 = c(1, 4, 5, 7, 9), PC2 = c(2, 3, 6, 8, 10)))
+target <- scrub(target, isvalue=1)
+rownames(target) <- tv_names
+
+target
+
+# target rotation
+result.target <- principal(tv_cor, 2, rotate = "targetQ", Target = target)
+result.target
+
+# extract loadings
+result.target$loadings
+
+#extract weights
+result.target$weights
+
+#extract structural matrix
+result.target$Structure
+```
+
+A logical target it to split the components by category: sports programs and news. 
+
+The interpretation of the 2 components ...
+
+**Q3.	What proportion of total variance in the original variables is explained by the two components (as a whole)? At the individual level, which TV program has the largest proportion of variance  explained by the two PCs (and how much)? Which has the least (and how much)?** 
+
+```{r}
+# SS of loadings - column-wise sum of squared loadings = eigenvalues (variance explained) in unrotated loadings
+
+    # sum of square loadings at the 0 locations of the target for 
+    # target rotated solution
+
+    sum(result.target$loadings[!is.na(target[,2:1])]^2)
+
+# Prop Var - proportion of variance explained out of total variance of 10, number of variables
+
+# communality (h2) - proprtion of variance in program explained by the two PCs
+```
+
+The proportion of total variance in the original variables explained by the two components is [x]
+The TV program with the largest proportion of variance explained by the two PCs is [], with a communality = [x]
+The TV program with the lowest proportion of variance explained by the two PCs is [], with a communality = [x]
+
+**Q4.	How much variance do the two PCs share with each other?** 
+```{r}
+# correlation between 2 components 
+result.target$Phi
+
+    # if correlation is 0.3, two PCs share about 9% of variance
+```
+
+The two PCs share [x %] of variance. 
+
+**Q5.	Express the PC1 in terms of the original standardize variables.** 
+
+y1 = ()x1 + ()x2 + ()x3 + ()x4 + ()x5 + ()x6 + ()x7 + ()x8 + ()x9 + ()x10
+
+**Q6.	Write a regression equation that regresses Boxing on the two PCs.** 
+
+y1 = ()x1 + ()x2 + ()x3 + ()x4 + ()x5 + ()x6 + ()x7 + ()x8 + ()x9 + ()x10
+
+y2 = ()x1 + ()x2 + ()x3 + ()x4 + ()x5 + ()x6 + ()x7 + ()x8 + ()x9 + ()x10
+
+x1(boxing) = ()y1 + ()y2 + e1
+
+**Q7.	What is the correlation between World Sport and PC1?** 
+```{r}
+
+```
+

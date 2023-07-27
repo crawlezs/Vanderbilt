@@ -1,0 +1,8 @@
+"0","#Do the same for the explanatory variables (relation and interaction variables)"
+"0","colSums(res$loading.x^2)/6"
+"1","        1 "
+"1","
+"
+"1","0.4532336 "
+"1","
+"

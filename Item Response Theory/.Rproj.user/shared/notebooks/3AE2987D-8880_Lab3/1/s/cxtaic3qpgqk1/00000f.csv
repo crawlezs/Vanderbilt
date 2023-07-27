@@ -1,0 +1,14 @@
+"0","# Item parameters"
+"0","gpcm <- gpcm(poly, IRT.param = TRUE)"
+"0","summary(gpcm)"
+"1","
+Call:
+"
+"1",""
+"1","gpcm(data = poly, IRT.param = TRUE)"
+"1",""
+"1","
+
+"
+"1","Model Summary:
+"

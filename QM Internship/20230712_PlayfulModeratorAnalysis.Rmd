@@ -1,0 +1,2000 @@
+---
+title: "20230608_PlayfulModeratorAnalysis"
+output:
+  html_document: default
+  pdf_document: default
+date: "2023-06-08"
+---
+
+load dataset 
+```{r}
+library(haven) #import sav
+
+fulldataframe <- read_sav("PFModerator.sav")
+head(fulldataframe)
+```
+[,2:20] - Summed Scores
+[,21:27] - COVID Context Measures
+[,27:28] - Loneliness/Isolation
+[,30:33] - Resilience Measures
+[,34:45] - Social Support Measures
+[,46:74] - Demographic Measures
+[,75:107] - Activity Measures
+[,108:145] - Individual Items
+```{r}
+#remove individual items data
+scoresdataframe <- fulldataframe[,1:107]
+
+summary(scoresdataframe)
+```
+```{r}
+library(psych)
+
+model1data <- subset(fulldataframe, select = c("pftrait", "pfstate", "uninhib", "sptns", "funmtv", "EWB", "Stress", "Depression", "PHChgn", "life_sat", "fml_life_sat", "physical_health"))
+
+describe(model1data)
+```
+
+Ordinal Variables
+```{r}
+library(plyr)
+
+ordinaldf <- subset(scoresdataframe, select = c("favl_freq", "favl_chng", "favl_chng_r3", "favl_chng_r5", "pa_freq", "pa_chng"))
+
+count(ordinaldf, "favl_freq")
+count(ordinaldf, "favl_chng")
+count(ordinaldf, "favl_chng_r3")
+count(ordinaldf, "favl_chng_r5")
+count(ordinaldf, "pa_freq")
+count(ordinaldf, "pa_chng")
+```
+```{r}
+#create dataframe for model 2.1
+model2.1data <-  subset(model1data, select = c("pftrait", "uninhib", "sptns", "funmtv", "EWB", "Stress", "Depression", "PHChgn"))
+
+df <- fulldataframe[,21:45]
+
+model2.1data <- cbind(model2.1data, df)
+```
+
+```{r}
+#score BRCS
+model2.1data$resilience <- model2.1data$BRCS_1
+
+for (x in 1:503){
+  model2.1data$resilience[x] <- (model2.1data$BRCS_1[x] + model2.1data$BRCS_2[x] + model2.1data$BRCS_3[x] + model2.1data$BRCS_4[x])
+}
+```
+
+```{r}
+#score social support
+model2.1data$SigOth <- model2.1data$SigOth1
+model2.1data$Fmly <- model2.1data$Fmly1
+model2.1data$Frnd <- model2.1data$Frnd1
+model2.1data$Social_total <- model2.1data$Frnd1
+
+for (x in 1:503){
+  #significant other
+  model2.1data$SigOth[x] <- (model2.1data$SigOth1[x] + model2.1data$SigOth2[x] + model2.1data$SigOth3[x] + model2.1data$SigOth4[x])/4 
+  
+  #family
+  model2.1data$Fmly[x] <- (model2.1data$Fmly1[x] + model2.1data$Fmly2[x] + model2.1data$Fmly3[x] + model2.1data$Fmly4[x])/4
+  
+  #friend
+  model2.1data$Frnd[x] <- (model2.1data$Frnd1[x] + model2.1data$Frnd2[x] + model2.1data$Frnd3[x] + model2.1data$Frnd4[x])/4
+  
+  #total
+  model2.1data$Social_total[x] <- (model2.1data$SigOth1[x] + model2.1data$SigOth2[x] + model2.1data$SigOth3[x] + model2.1data$SigOth4[x] + model2.1data$Fmly1[x] + model2.1data$Fmly2[x] + model2.1data$Fmly3[x] + model2.1data$Fmly4[x] + model2.1data$Frnd1[x] + model2.1data$Frnd2[x] + model2.1data$Frnd3[x] + model2.1data$Frnd4[x])/12
+}
+```
+
+```{r}
+#remove individual items
+model2.1data <- subset(model2.1data, select = -c(BRCS_1, BRCS_2, BRCS_3, BRCS_4, SigOth1, SigOth2, SigOth3, SigOth4, Fmly1, Fmly2, Fmly3, Fmly4, Frnd1, Frnd2, Frnd3, Frnd4))
+```
+
+
+# Model 1
+## Descriptive Statistics
+
+Distribution
+```{r}
+#distribution
+library(ggpubr)
+ggqqplot(model1data$pftrait) + ggtitle("Playfulness Trait")
+ggqqplot(model1data$pfstate) + ggtitle("Playfulness State")
+ggqqplot(model1data$EWB) + ggtitle("Emotional Wellbeing")
+ggqqplot(model1data$Stress) + ggtitle("Stress")
+ggqqplot(model1data$Depression) + ggtitle("Depression")
+ggqqplot(model1data$PHChgn) + ggtitle("Physical Change")
+ggqqplot(model1data$life_sat) + ggtitle("Life Satisfaction")
+ggqqplot(model1data$fml_life_sat) + ggtitle("Family Life Satisfaction")
+ggqqplot(model1data$physical_health) + ggtitle("Physical Health")
+```
+### Assumptions
+
+#### Normality
+```{r}
+#normality
+shapiro.test(model1data$pftrait)
+shapiro.test(model1data$pfstate)
+shapiro.test(model1data$EWB)
+shapiro.test(model1data$Stress)
+shapiro.test(model1data$Depression)
+shapiro.test(model1data$PHChgn)
+shapiro.test(model1data$life_sat)
+shapiro.test(model1data$fml_life_sat)
+shapiro.test(model1data$physical_health)
+```
+Transformations
+```{r}
+#playful state transformation
+hist(model1data$pfstate, main="Original")
+model1data$pfstate_t <- sqrt(model1data$pfstate)
+hist(model1data$pfstate_t, main="SQRT Transformed")
+shapiro.test(model1data$pfstate_t)
+```
+
+```{r}
+#Stress transformation
+hist(model1data$Stress, main="Original")
+model1data$Stress_t <- sqrt(model1data$Stress)
+hist(model1data$Stress_t, main="Square Transformed")
+shapiro.test(model1data$Stress_t)
+```
+```{r}
+#Depression transformation
+hist(model1data$Depression, main="Original")
+model1data$Depression_t <- sqrt(model1data$Depression)
+hist(model1data$Depression_t, main="Square Transformed")
+shapiro.test(model1data$Depression_t)
+```
+```{r}
+#PHChgn transformation
+hist(model1data$PHChgn, main="Original")
+model1data$PHChgn_t <- sqrt(model1data$PHChgn)
+hist(model1data$PHChgn_t, main="Square Transformed")
+shapiro.test(model1data$PHChgn_t)
+```
+```{r}
+#physical_health transformation
+hist(model1data$physical_health, main="Original")
+model1data$physical_health_t <- log(model1data$physical_health)
+hist(model1data$physical_health, main="Log Transformed")
+shapiro.test(model1data$physical_health_t)
+```
+
+#### Linear Relationship
+```{r}
+#playful trait x EWB
+plot(model1data$pftrait, model1data$EWB, main="Playful Trait x EWB", xlab="Playful Trait", ylab="EWB")
+```
+```{r}
+#playful trait x Stress
+plot(model1data$pftrait, model1data$stress_t, main="Playful Trait x Stress", xlab="Playful Trait", ylab="Stress")
+```
+
+```{r}
+#playful trait x Depression
+plot(model1data$pftrait, model1data$depression_t, main="Playful Trait x Depression", xlab="Playful Trait", ylab="Depression")
+```
+
+```{r}
+#playful trait x Physical Health Change
+plot(model1data$pftrait, model1data$PHChgn_t, main="Playful Trait x Physical Health Change", xlab="Playful Trait", ylab="Physical Health Change")
+```
+
+```{r}
+#playful trait x Life Satisfaction
+plot(model1data$pftrait, model1data$life_sat, main="Playful Trait x Life Satisfaction", xlab="Playful Trait", ylab="Life Satisfaction")
+```
+
+```{r}
+#playful trait x Family Life Satisfaction
+plot(model1data$pftrait, model1data$fml_life_sat, main="Playful Trait x Family Life Satisfaction", xlab="Playful Trait", ylab="Family Life Satisfaction")
+```
+
+```{r}
+#playful trait x Physical Health
+plot(model1data$pftrait, model1data$physical_health_t, main="Playful Trait x Physical Health", xlab="Playful Trait", ylab="Physical Health")
+```
+#### No Outliers
+```{r}
+library(rstatix)
+
+identify_outliers(model1data, pftrait)
+identify_outliers(model1data,pfstate)
+identify_outliers(model1data,EWB)
+identify_outliers(model1data,Stress)
+identify_outliers(model1data,Depression)
+identify_outliers(model1data,PHChgn)
+identify_outliers(model1data,life_sat)
+identify_outliers(model1data,fml_life_sat)
+identify_outliers(model1data,physical_health)
+```
+
+
+### Missing Data
+
+
+
+## Correlation Analysis
+
+Correlation Matrix
+```{r}
+#subset of model1 data
+model1data_2 <- subset(model1data, select = c("pftrait", "pfstate_t", "EWB", "Stress_t", "Depression_t", "PHChgn_t", "life_sat", "fml_life_sat", "physical_health"))
+
+#remove any NA
+model1data_2 <- na.omit(model1data_2)
+
+cor(model1data_2)
+```
+### Playful Correlates
+
+```{r}
+cor.test(model1data$pftrait, model1data$EWB)
+```
+
+```{r}
+cor.test(model1data$pftrait, model1data$Stress)
+```
+
+```{r}
+cor.test(model1data$pftrait, model1data$Depression )
+```
+
+```{r}
+cor.test(model1data$pftrait, model1data$PHChgn)
+```
+
+```{r}
+cor.test(model1data$pftrait, model1data$life_sat)
+```
+
+```{r}
+cor.test(model1data$pftrait, model1data$fml_life_sat)
+```
+
+```{r}
+cor.test(model1data$pftrait, model1data$physical_health)
+```
+```{r}
+cor.test(model1data$EWB, model1data$Stress)
+```
+```{r}
+cor.test(model1data$EWB, model1data$Depression)
+```
+```{r}
+cor.test(model1data$EWB, model1data$PHChgn)
+```
+```{r}
+cor.test(model1data$EWB, model1data$life_sat)
+```
+```{r}
+cor.test(model1data$EWB, model1data$fml_life_sat)
+```
+```{r}
+cor.test(model1data$EWB, model1data$physical_health)
+```
+```{r}
+cor.test(model1data$Stress, model1data$Depression)
+```
+```{r}
+cor.test(model1data$Stress, model1data$PHChgn)
+```
+```{r}
+cor.test(model1data$Stress, model1data$life_sat)
+```
+```{r}
+cor.test(model1data$Stress, model1data$fml_life_sat)
+```
+```{r}
+cor.test(model1data$Stress, model1data$physical_health)
+```
+```{r}
+cor.test(model1data$Depression, model1data$PHChgn)
+```
+```{r}
+cor.test(model1data$Depression, model1data$life_sat)
+```
+```{r}
+cor.test(model1data$Depression, model1data$fml_life_sat)
+```
+```{r}
+cor.test(model1data$Depression, model1data$physical_health)
+```
+```{r}
+cor.test(model1data$PHChgn, model1data$life_sat)
+```
+```{r}
+cor.test(model1data$PHChgn, model1data$fml_life_sat)
+```
+```{r}
+cor.test(model1data$PHChgn, model1data$physical_health)
+```
+```{r}
+cor.test(model1data$life_sat, model1data$fml_life_sat)
+```
+```{r}
+cor.test(model1data$life_sat, model1data$physical_health)
+```
+```{r}
+cor.test(model1data$fml_life_sat, model1data$physical_health)
+```
+### Risk & Protective Factors 
+
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$COVID_RiskGeneral)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$COVID_RiskSelf)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$COVID_Precaution)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$COV_Outlook)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$PosPM)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$NegPM)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$COVID_RiskSelf)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$loneliness)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$isolation)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$pftrait, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$COVID_RiskSelf)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$COVID_Precaution)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$COV_Outlook)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$PosPM)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$NegPM)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$COVID_RiskStress)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$loneliness)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$isolation)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskGeneral, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$COVID_Precaution)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$COV_Outlook)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$PosPM)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$NegPM)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$COVID_RiskStress)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$loneliness)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$isolation)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskSelf, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$COV_Outlook)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$PosPM)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$NegPM)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$COVID_RiskStress)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$loneliness)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$isolation)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$COVID_Precaution, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$COV_Outlook, model2.1data$NegPM)
+```
+```{r}
+cor.test(model2.1data$COV_Outlook, model2.1data$COVID_RiskStress)
+```
+```{r}
+cor.test(model2.1data$COV_Outlook, model2.1data$loneliness)
+```
+```{r}
+cor.test(model2.1data$COV_Outlook, model2.1data$isolation)
+```
+```{r}
+cor.test(model2.1data$COV_Outlook, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$COV_Outlook, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$COV_Outlook, model2.1data$Fmly)
+```
+
+```{r}
+cor.test(model2.1data$COV_Outlook, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$PosPM, model2.1data$NegPM)
+```
+```{r}
+cor.test(model2.1data$PosPM, model2.1data$COVID_RiskStress)
+```
+```{r}
+cor.test(model2.1data$PosPM, model2.1data$isolation)
+```
+```{r}
+cor.test(model2.1data$PosPM, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$PosPM, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$PosPM, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$PosPM, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$NegPM, model2.1data$COVID_RiskStress)
+```
+```{r}
+cor.test(model2.1data$NegPM, model2.1data$loneliness)
+```
+```{r}
+cor.test(model2.1data$NegPM, model2.1data$isolation)
+```
+```{r}
+cor.test(model2.1data$NegPM, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$NegPM, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$NegPM, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$NegPM, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskStress, model2.1data$loneliness)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskStress, model2.1data$isolation)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskStress, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskStress, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskStress, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$COVID_RiskStress, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$loneliness, model2.1data$isolation)
+```
+```{r}
+cor.test(model2.1data$loneliness, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$loneliness, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$loneliness, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$loneliness, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$isolation, model2.1data$resilience)
+```
+```{r}
+cor.test(model2.1data$isolation, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$isolation, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$isolation, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$resilience, model2.1data$SigOth)
+```
+```{r}
+cor.test(model2.1data$resilience, model2.1data$Fmly)
+```
+```{r}
+cor.test(model2.1data$resilience, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$SigOth, model2.1data$Fmly)
+```
+
+```{r}
+cor.test(model2.1data$SigOth, model2.1data$Frnd)
+```
+```{r}
+cor.test(model2.1data$Fmly, model2.1data$Frnd)
+```
+```{r}
+#calculate VIF
+model <- lm(pftrait ~ COVID_RiskGeneral + COVID_RiskSelf + COVID_Precaution + COV_Outlook + COVID_RiskStress + PosPM + NegPM + SigOth + Fmly + Frnd + loneliness + isolation + resilience, data=model2.1data)
+
+library(car)
+vif(model)
+```
+### Adaptive Leisure Engagement 
+```{r}
+#create dataframe for model 2.2
+model2.2data <-  subset(fulldataframe, select = c("pftrait", "uninhib", "sptns", "funmtv",  "pfstate", "immersion", "active", "pstvafct", "intnctrl","EWB", "Stress", "Depression", "PHChgn", "favl_freq", "favl_eval", "PA_Outdoor", "Digital", "favl_chng_r3", "ORFreq", "ORIdeal", "ORChng"))
+```
+
+```{r}
+cor.test(model2.2data$pfstate, model2.2data$favl_freq)
+```
+
+```{r}
+cor.test(model2.2data$pfstate, model2.2data$favl_eval)
+```
+
+```{r}
+cor.test(model2.2data$pfstate, model2.2data$PA_Outdoor)
+```
+```{r}
+cor.test(model2.2data$pfstate, model2.2data$Digital)
+```
+```{r}
+cor.test(model2.2data$pfstate, model2.2data$favl_chng_r3)
+```
+```{r}
+cor.test(model2.2data$pfstate, model2.2data$ORFreq)
+```
+```{r}
+cor.test(model2.2data$pfstate, model2.2data$ORIdeal)
+```
+```{r}
+cor.test(model2.2data$pfstate, model2.2data$ORChng)
+```
+```{r}
+cor.test(model2.2data$favl_freq, model2.2data$favl_eval)
+```
+```{r}
+cor.test(model2.2data$favl_freq, model2.2data$favl_chng_r3)
+```
+```{r}
+cor.test(model2.2data$favl_freq, model2.2data$PA_Outdoor)
+```
+```{r}
+cor.test(model2.2data$favl_freq, model2.2data$Digital)
+```
+```{r}
+cor.test(model2.2data$favl_freq, model2.2data$ORFreq)
+```
+```{r}
+cor.test(model2.2data$favl_freq, model2.2data$ORIdeal)
+```
+```{r}
+cor.test(model2.2data$favl_freq, model2.2data$ORChng)
+```
+```{r}
+cor.test(model2.2data$favl_eval, model2.2data$favl_chng_r3)
+```
+```{r}
+cor.test(model2.2data$favl_eval, model2.2data$PA_Outdoor)
+```
+```{r}
+cor.test(model2.2data$favl_eval, model2.2data$Digital)
+```
+```{r}
+cor.test(model2.2data$favl_eval, model2.2data$ORFreq)
+```
+```{r}
+cor.test(model2.2data$favl_eval, model2.2data$ORIdeal)
+```
+```{r}
+cor.test(model2.2data$favl_eval, model2.2data$ORChng)
+```
+```{r}
+cor.test(model2.2data$favl_chng_r3, model2.2data$PA_Outdoor)
+```
+```{r}
+cor.test(model2.2data$favl_chng_r3, model2.2data$Digital)
+```
+```{r}
+cor.test(model2.2data$favl_chng_r3, model2.2data$ORFreq)
+```
+```{r}
+cor.test(model2.2data$favl_chng_r3, model2.2data$ORIdeal)
+```
+```{r}
+cor.test(model2.2data$favl_chng_r3, model2.2data$ORChng)
+```
+```{r}
+cor.test(model2.2data$PA_Outdoor, model2.2data$Digital)
+```
+```{r}
+cor.test(model2.2data$PA_Outdoor, model2.2data$ORFreq)
+```
+```{r}
+cor.test(model2.2data$PA_Outdoor, model2.2data$ORIdeal)
+```
+```{r}
+cor.test(model2.2data$PA_Outdoor, model2.2data$ORChng)
+```
+```{r}
+cor.test(model2.2data$Digital, model2.2data$ORFreq)
+```
+```{r}
+cor.test(model2.2data$Digital, model2.2data$ORIdeal)
+```
+```{r}
+cor.test(model2.2data$Digital, model2.2data$ORChng)
+```
+```{r}
+cor.test(model2.2data$ORFreq, model2.2data$ORIdeal)
+```
+```{r}
+cor.test(model2.2data$ORFreq, model2.2data$ORChng)
+```
+```{r}
+cor.test(model2.2data$ORIdeal, model2.2data$ORChng)
+```
+```{r}
+#calculate VIF
+model <- lm(pftrait ~ pfstate + favl_freq + favl_eval + favl_chng_r3 + PA_Outdoor + Digital + ORFreq + ORIdeal + ORChng, data=model2.2data)
+
+vif(model)
+```
+
+# Model 2.1
+
+## Descriptive Statistics
+
+```{r}
+#remove missing items
+model2.1data <- na.omit(model2.1data)
+
+#combine isolation and loneliness
+model2.1data$loneliness_isolation <- model2.1data$loneliness + model2.1data$isolation
+```
+
+```{r}
+ggqqplot(model2.1data$COVID_RiskGeneral) + ggtitle("COVID - General Risk")
+ggqqplot(model2.1data$COVID_Precaution) + ggtitle("COVID - Precaution")
+ggqqplot(model2.1data$COV_Outlook) + ggtitle("COVID - Outlook")
+ggqqplot(model2.1data$COVID_RiskStress) + ggtitle("COVID - Stress about Risk")
+ggqqplot(model2.1data$PosPM) + ggtitle("COVID - Pos Preventative Measures")
+ggqqplot(model2.1data$NegPM) + ggtitle("COVID - Neg Preventative Measures")
+ggqqplot(model2.1data$Social_total) + ggtitle("Social - Total")
+ggqqplot(model2.1data$loneliness_isolation) + ggtitle("Loneliness/Isolation")
+ggqqplot(model2.1data$resilience) + ggtitle("Resilience")
+```
+
+```{r}
+#normality
+shapiro.test(model2.1data$COVID_RiskGeneral)
+shapiro.test(model2.1data$COVID_Precaution)
+shapiro.test(model2.1data$COV_Outlook)
+shapiro.test(model2.1data$PosPM)
+shapiro.test(model2.1data$NegPM)
+shapiro.test(model2.1data$COVID_RiskStress)
+shapiro.test(model2.1data$Social_total)
+shapiro.test(model2.1data$loneliness_isolation)
+shapiro.test(model2.1data$resilience)
+```
+```{r}
+#transform - precaution
+hist(model2.1data$COVID_Precaution, main="Original")
+model2.1data$COVID_Precaution_t <- sqrt(model2.1data$COVID_Precaution)
+hist(model2.1data$COVID_Precaution_t, main="SQRT Transformed")
+shapiro.test(model2.1data$COVID_Precaution_t)
+```
+
+```{r}
+#transform - positive PM
+hist(model2.1data$PosPM, main="Original")
+model2.1data$PosPM_t <- sqrt(model2.1data$PosPM)
+hist(model2.1data$PosPM_t, main="SQRT Transformed")
+shapiro.test(model2.1data$PosPM_t)
+```
+
+## Mediation Analysis
+```{r}
+#insert image
+library(knitr)
+knitr::include_graphics("Model2.1.png")
+```
+```{r}
+library(lavaan)
+```
+### Unstandardized
+#### Single X, Single Y
+```{r}
+#insert image
+knitr::include_graphics("Model2.1.1a.png")
+```
+
+```{r}
+#Model 2.1.1a
+
+model <- '
+
+# outcome model 
+EWB ~ c*pftrait + b1*COVID_RiskGeneral + b2*COVID_RiskStress + b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM +  b7*loneliness_isolation + b8*resilience + b9*Social_total
+
+# mediator models
+COVID_RiskGeneral ~ a1*pftrait 
+COVID_RiskStress ~ a2*pftrait
+COVID_Precaution ~ a3*pftrait
+COV_Outlook ~ a4*pftrait
+PosPM ~ a5*pftrait
+NegPM ~ a6*pftrait
+loneliness_isolation ~ a7*pftrait
+resilience ~ a8*pftrait
+Social_total ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.1data, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+
+```{r}
+#insert image
+knitr::include_graphics("Model2.1.1b.png")
+```
+
+```{r}
+#Model 2.1.1b
+
+model <- '
+
+# outcome model 
+Stress ~ c*pftrait + b1*COVID_RiskGeneral + b2*COVID_RiskStress + b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM +  b7*loneliness_isolation + b8*resilience + b9*Social_total
+
+# mediator models
+COVID_RiskGeneral ~ a1*pftrait 
+COVID_RiskStress ~ a2*pftrait
+COVID_Precaution ~ a3*pftrait
+COV_Outlook ~ a4*pftrait
+PosPM ~ a5*pftrait
+NegPM ~ a6*pftrait
+loneliness_isolation ~ a7*pftrait
+resilience ~ a8*pftrait
+Social_total ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.1data, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+```{r}
+#insert image
+knitr::include_graphics("Model2.1.1c.png")
+```
+
+```{r}
+#Model 2.1.1c
+
+model <- '
+
+# outcome model 
+PHChgn ~ c*pftrait + b1*COVID_RiskGeneral + b2*COVID_RiskStress + b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM +  b7*loneliness_isolation + b8*resilience + b9*Social_total
+
+# mediator models
+COVID_RiskGeneral ~ a1*pftrait 
+COVID_RiskStress ~ a2*pftrait
+COVID_Precaution ~ a3*pftrait
+COV_Outlook ~ a4*pftrait
+PosPM ~ a5*pftrait
+NegPM ~ a6*pftrait
+loneliness_isolation ~ a7*pftrait
+resilience ~ a8*pftrait
+Social_total ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.1data, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+
+```{r}
+#Model 2.1.1d
+
+model <- '
+
+# outcome model 
+Depression ~ c*pftrait + b1*COVID_RiskGeneral + b2*COVID_RiskStress + b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM +  b7*loneliness_isolation + b8*resilience + b9*Social_total
+
+# mediator models
+COVID_RiskGeneral ~ a1*pftrait 
+COVID_RiskStress ~ a2*pftrait
+COVID_Precaution ~ a3*pftrait
+COV_Outlook ~ a4*pftrait
+PosPM ~ a5*pftrait
+NegPM ~ a6*pftrait
+loneliness_isolation ~ a7*pftrait
+resilience ~ a8*pftrait
+Social_total ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.1data, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+
+#### Multiple X, Single Y
+```{r}
+#insert image
+knitr::include_graphics("Model2.1.2a.png")
+```
+
+```{r}
+#Model2.1.2a
+
+model <- '
+
+# outcome model 
+EWB ~ c1*uninhib + c2*sptns + c3*funmtv + b1*COVID_RiskGeneral + b2*COVID_RiskSelf +b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM + b7*COVID_RiskStress + b8*loneliness + b9*isolation + b10*resilience + b11*SigOth + b12*Fmly + b13*Frnd
+
+# mediator models
+COVID_RiskGeneral ~ a11*uninhib  + a12*sptns + a13*funmtv
+COVID_RiskSelf ~ a21*uninhib + a22*sptns + a23*funmtv
+COVID_Precaution ~ a31*uninhib + a32*sptns + a33*funmtv
+COV_Outlook ~ a41*uninhib + a42*sptns + a43*funmtv
+PosPM ~ a51*uninhib + a52*sptns + a53*funmtv
+NegPM ~ a61*uninhib + a62*sptns + a63*funmtv
+COVID_RiskStress ~ a71*uninhib + a72*sptns + a73*funmtv
+loneliness ~ a81*uninhib + a82*sptns + a83*funmtv
+isolation ~ a91*uninhib + a92*sptns + a93*funmtv
+resilience ~ a101*uninhib + a102*sptns + a103*funmtv
+SigOth ~ a111*uninhib + a112*sptns + a113*funmtv
+Fmly ~ a121*uninhib + a122*sptns + a123*funmtv
+Frnd ~ a131*uninhib + a132*sptns + a133*funmtv
+
+# indirect effects (IDE)
+indirect11  := a11*b1
+indirect21  := a21*b2
+indirect31  := a31*b3
+indirect41  := a41*b4
+indirect51  := a51*b5
+indirect61  := a61*b6
+indirect71  := a71*b7
+indirect81  := a81*b8
+indirect91  := a91*b9
+indirect101  := a101*b10
+indirect111 := a111*b11
+indirect121 := a121*b12
+indirect131 := a131*b13
+
+indirect12  := a12*b1
+indirect22  := a22*b2
+indirect32  := a32*b3
+indirect42  := a42*b4
+indirect52  := a52*b5
+indirect62  := a62*b6
+indirect72  := a72*b7
+indirect82  := a82*b8
+indirect92  := a92*b9
+indirect102  := a102*b10
+indirect112 := a112*b11
+indirect122 := a122*b12
+indirect132 := a132*b13
+
+indirect13  := a13*b1
+indirect23  := a23*b2
+indirect33  := a33*b3
+indirect43  := a43*b4
+indirect53  := a53*b5
+indirect63  := a63*b6
+indirect73  := a73*b7
+indirect83  := a83*b8
+indirect93  := a93*b9
+indirect103  := a103*b10
+indirect113 := a113*b11
+indirect123 := a123*b12
+indirect133 := a133*b13
+
+# total effect
+cprime := (c1 + 2*c2) #equivalent for 3?
+total := cprime + (a11*b1) + (a21*b2) + (a31*b3) + (a41*b4) + (a51*b5) + (a61*b6) + (a71*b7)+ (a81*b8)+ (a91*b9)+ (a101*b10)+ (a111*b11)+ (a121*b12)+ (a131*b13) + (a12*b1) + (a22*b2) + (a32*b3) + (a42*b4) + (a52*b5) + (a62*b6) + (a72*b7)+ (a82*b8)+ (a92*b9)+ (a102*b10)+ (a112*b11)+ (a122*b12)+ (a132*b13)+ (a13*b1) + (a23*b2) + (a33*b3) + (a43*b4) + (a53*b5) + (a63*b6) + (a73*b7)+ (a83*b8)+ (a93*b9)+ (a103*b10)+ (a113*b11)+ (a123*b12)+ (a133*b13)
+'
+
+fit <- sem(model, data=model2.1data, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+```{r}
+#insert image
+knitr::include_graphics("Model2.1.2b.png")
+```
+
+```{r}
+#Model2.1.2b
+
+model <- '
+
+# outcome model 
+Stress ~ c1*uninhib + c2*sptns + c3*funmtv + b1*COVID_RiskGeneral + b2*COVID_RiskSelf +b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM + b7*COVID_RiskStress + b8*loneliness + b9*isolation + b10*resilience + b11*SigOth + b12*Fmly + b13*Frnd
+
+# mediator models
+COVID_RiskGeneral ~ a11*uninhib  + a12*sptns + a13*funmtv
+COVID_RiskSelf ~ a21*uninhib + a22*sptns + a23*funmtv
+COVID_Precaution ~ a31*uninhib + a32*sptns + a33*funmtv
+COV_Outlook ~ a41*uninhib + a42*sptns + a43*funmtv
+PosPM ~ a51*uninhib + a52*sptns + a53*funmtv
+NegPM ~ a61*uninhib + a62*sptns + a63*funmtv
+COVID_RiskStress ~ a71*uninhib + a72*sptns + a73*funmtv
+loneliness ~ a81*uninhib + a82*sptns + a83*funmtv
+isolation ~ a91*uninhib + a92*sptns + a93*funmtv
+resilience ~ a101*uninhib + a102*sptns + a103*funmtv
+SigOth ~ a111*uninhib + a112*sptns + a113*funmtv
+Fmly ~ a121*uninhib + a122*sptns + a123*funmtv
+Frnd ~ a131*uninhib + a132*sptns + a133*funmtv
+
+# indirect effects (IDE)
+indirect11  := a11*b1
+indirect21  := a21*b2
+indirect31  := a31*b3
+indirect41  := a41*b4
+indirect51  := a51*b5
+indirect61  := a61*b6
+indirect71  := a71*b7
+indirect81  := a81*b8
+indirect91  := a91*b9
+indirect101  := a101*b10
+indirect111 := a111*b11
+indirect121 := a121*b12
+indirect131 := a131*b13
+
+indirect12  := a12*b1
+indirect22  := a22*b2
+indirect32  := a32*b3
+indirect42  := a42*b4
+indirect52  := a52*b5
+indirect62  := a62*b6
+indirect72  := a72*b7
+indirect82  := a82*b8
+indirect92  := a92*b9
+indirect102  := a102*b10
+indirect112 := a112*b11
+indirect122 := a122*b12
+indirect132 := a132*b13
+
+indirect13  := a13*b1
+indirect23  := a23*b2
+indirect33  := a33*b3
+indirect43  := a43*b4
+indirect53  := a53*b5
+indirect63  := a63*b6
+indirect73  := a73*b7
+indirect83  := a83*b8
+indirect93  := a93*b9
+indirect103  := a103*b10
+indirect113 := a113*b11
+indirect123 := a123*b12
+indirect133 := a133*b13
+
+# total effect
+cprime := (c1 + 2*c2) #equivalent for 3?
+total := cprime + (a11*b1) + (a21*b2) + (a31*b3) + (a41*b4) + (a51*b5) + (a61*b6) + (a71*b7)+ (a81*b8)+ (a91*b9)+ (a101*b10)+ (a111*b11)+ (a121*b12)+ (a131*b13) + (a12*b1) + (a22*b2) + (a32*b3) + (a42*b4) + (a52*b5) + (a62*b6) + (a72*b7)+ (a82*b8)+ (a92*b9)+ (a102*b10)+ (a112*b11)+ (a122*b12)+ (a132*b13)+ (a13*b1) + (a23*b2) + (a33*b3) + (a43*b4) + (a53*b5) + (a63*b6) + (a73*b7)+ (a83*b8)+ (a93*b9)+ (a103*b10)+ (a113*b11)+ (a123*b12)+ (a133*b13)
+'
+
+fit <- sem(model, data=model2.1data, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+
+```{r}
+#insert image
+knitr::include_graphics("Model2.1.2c.png")
+```
+
+```{r}
+#Model2.1.2c
+
+model <- '
+
+# outcome model 
+PHChgn ~ c1*uninhib + c2*sptns + c3*funmtv + b1*COVID_RiskGeneral + b2*COVID_RiskSelf +b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM + b7*COVID_RiskStress + b8*loneliness + b9*isolation + b10*resilience + b11*SigOth + b12*Fmly + b13*Frnd
+
+# mediator models
+COVID_RiskGeneral ~ a11*uninhib  + a12*sptns + a13*funmtv
+COVID_RiskSelf ~ a21*uninhib + a22*sptns + a23*funmtv
+COVID_Precaution ~ a31*uninhib + a32*sptns + a33*funmtv
+COV_Outlook ~ a41*uninhib + a42*sptns + a43*funmtv
+PosPM ~ a51*uninhib + a52*sptns + a53*funmtv
+NegPM ~ a61*uninhib + a62*sptns + a63*funmtv
+COVID_RiskStress ~ a71*uninhib + a72*sptns + a73*funmtv
+loneliness ~ a81*uninhib + a82*sptns + a83*funmtv
+isolation ~ a91*uninhib + a92*sptns + a93*funmtv
+resilience ~ a101*uninhib + a102*sptns + a103*funmtv
+SigOth ~ a111*uninhib + a112*sptns + a113*funmtv
+Fmly ~ a121*uninhib + a122*sptns + a123*funmtv
+Frnd ~ a131*uninhib + a132*sptns + a133*funmtv
+
+# indirect effects (IDE)
+indirect11  := a11*b1
+indirect21  := a21*b2
+indirect31  := a31*b3
+indirect41  := a41*b4
+indirect51  := a51*b5
+indirect61  := a61*b6
+indirect71  := a71*b7
+indirect81  := a81*b8
+indirect91  := a91*b9
+indirect101  := a101*b10
+indirect111 := a111*b11
+indirect121 := a121*b12
+indirect131 := a131*b13
+
+indirect12  := a12*b1
+indirect22  := a22*b2
+indirect32  := a32*b3
+indirect42  := a42*b4
+indirect52  := a52*b5
+indirect62  := a62*b6
+indirect72  := a72*b7
+indirect82  := a82*b8
+indirect92  := a92*b9
+indirect102  := a102*b10
+indirect112 := a112*b11
+indirect122 := a122*b12
+indirect132 := a132*b13
+
+indirect13  := a13*b1
+indirect23  := a23*b2
+indirect33  := a33*b3
+indirect43  := a43*b4
+indirect53  := a53*b5
+indirect63  := a63*b6
+indirect73  := a73*b7
+indirect83  := a83*b8
+indirect93  := a93*b9
+indirect103  := a103*b10
+indirect113 := a113*b11
+indirect123 := a123*b12
+indirect133 := a133*b13
+
+# total effect
+cprime := (c1 + 2*c2) #equivalent for 3?
+total := cprime + (a11*b1) + (a21*b2) + (a31*b3) + (a41*b4) + (a51*b5) + (a61*b6) + (a71*b7)+ (a81*b8)+ (a91*b9)+ (a101*b10)+ (a111*b11)+ (a121*b12)+ (a131*b13) + (a12*b1) + (a22*b2) + (a32*b3) + (a42*b4) + (a52*b5) + (a62*b6) + (a72*b7)+ (a82*b8)+ (a92*b9)+ (a102*b10)+ (a112*b11)+ (a122*b12)+ (a132*b13)+ (a13*b1) + (a23*b2) + (a33*b3) + (a43*b4) + (a53*b5) + (a63*b6) + (a73*b7)+ (a83*b8)+ (a93*b9)+ (a103*b10)+ (a113*b11)+ (a123*b12)+ (a133*b13)
+'
+
+fit <- sem(model, data=model2.1data, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+
+### Standardized
+```{r}
+#standardize variables
+model2.1data_std <- model2.1data %>%
+  mutate(COVID_RiskGeneral = scale(COVID_RiskGeneral),
+         COVID_RiskStress = scale(COVID_RiskStress),
+         COVID_Precaution = scale(COVID_Precaution),
+         COV_Outlook = scale(COV_Outlook),
+         PosPM = scale(PosPM),
+         NegPM = scale(NegPM),
+         loneliness_isolation = scale(loneliness_isolation),
+         resilience = scale(resilience),
+         Social_total = scale(Social_total)
+)
+```
+
+#### Single X, Single Y
+```{r}
+#Model 2.1.1d
+
+model <- '
+
+# outcome model 
+EWB ~ c*pftrait + b1*COVID_RiskGeneral + b2*COVID_RiskStress + b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM +  b7*loneliness_isolation + b8*resilience + b9*Social_total
+
+# mediator models
+COVID_RiskGeneral ~ a1*pftrait 
+COVID_RiskStress ~ a2*pftrait
+COVID_Precaution ~ a3*pftrait
+COV_Outlook ~ a4*pftrait
+PosPM ~ a5*pftrait
+NegPM ~ a6*pftrait
+loneliness_isolation ~ a7*pftrait
+resilience ~ a8*pftrait
+Social_total ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.1data_std, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+```{r}
+#Model 2.1.1e
+
+model <- '
+
+# outcome model 
+Stress ~ c*pftrait + b1*COVID_RiskGeneral + b2*COVID_RiskStress + b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM +  b7*loneliness_isolation + b8*resilience + b9*Social_total
+
+# mediator models
+COVID_RiskGeneral ~ a1*pftrait 
+COVID_RiskStress ~ a2*pftrait
+COVID_Precaution ~ a3*pftrait
+COV_Outlook ~ a4*pftrait
+PosPM ~ a5*pftrait
+NegPM ~ a6*pftrait
+loneliness_isolation ~ a7*pftrait
+resilience ~ a8*pftrait
+Social_total ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.1data_std, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+```{r}
+#Model 2.1.1f
+
+model <- '
+
+# outcome model 
+PHChgn ~ c*pftrait + b1*COVID_RiskGeneral + b2*COVID_RiskStress + b3*COVID_Precaution + b4*COV_Outlook + b5*PosPM + b6*NegPM +  b7*loneliness_isolation + b8*resilience + b9*Social_total
+
+# mediator models
+COVID_RiskGeneral ~ a1*pftrait 
+COVID_RiskStress ~ a2*pftrait
+COVID_Precaution ~ a3*pftrait
+COV_Outlook ~ a4*pftrait
+PosPM ~ a5*pftrait
+NegPM ~ a6*pftrait
+loneliness_isolation ~ a7*pftrait
+resilience ~ a8*pftrait
+Social_total ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.1data_std, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+# Model 2.2
+
+
+## Descriptive Statistics
+```{r}
+describe(model2.2data)
+```
+```{r}
+#remove missing items
+model2.2data <- na.omit(model2.2data)
+```
+
+```{r}
+ggqqplot(model2.2data$favl_freq) + ggtitle("Leisure Frequency")
+ggqqplot(model2.2data$favl_eval) + ggtitle("Leisure Evaluation")
+ggqqplot(model2.2data$favl_chng_r3) + ggtitle("Leisure Change")
+ggqqplot(model2.2data$PA_Outdoor) + ggtitle("PA/Outdoor")
+ggqqplot(model2.2data$Digital) + ggtitle("Digital")
+ggqqplot(model2.2data$ORFreq) + ggtitle("OR Frequency")
+ggqqplot(model2.2data$ORIdeal) + ggtitle("OR Evaluation")
+ggqqplot(model2.2data$ORChng) + ggtitle("OR Change")
+ggqqplot(model2.2data$pfstate) + ggtitle("Playful State")
+
+```
+
+
+```{r}
+#normality shapiro.test(model2.2data$favl_freq)
+shapiro.test(model2.2data$favl_freq)
+shapiro.test(model2.2data$favl_eval)
+shapiro.test(model2.2data$favl_chng_r3)
+shapiro.test(model2.2data$ORFreq)
+shapiro.test(model2.2data$ORIdeal)
+shapiro.test(model2.2data$ORChng)
+```
+## Mediation Analysis
+```{r}
+#insert image
+library(knitr)
+knitr::include_graphics("Model2.2.png")
+```
+### Single X, Single Y
+```{r}
+#insert image
+knitr::include_graphics("Model2.2.1a.png")
+```
+
+```{r}
+#Model 2.2.1a
+
+model <- '
+
+# outcome model 
+EWB ~ c*pftrait + b1*pfstate + b2*favl_freq +b3*favl_eval + b4*PA_Outdoor + b5*Digital + b6*favl_chng_r3 + b7*ORFreq + b8*ORIdeal + b9*ORChng 
+
+# mediator models
+pfstate ~ a1*pftrait 
+favl_freq ~ a2*pftrait
+favl_eval ~ a3*pftrait
+PA_Outdoor ~ a4*pftrait
+Digital ~ a5*pftrait
+favl_chng_r3 ~ a6*pftrait
+ORFreq ~ a7*pftrait
+ORIdeal ~ a8*pftrait
+ORChng ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+```{r}
+#insert image
+knitr::include_graphics("Model2.2.1b.png")
+```
+
+```{r}
+#Model 2.2.1a
+
+model <- '
+
+# outcome model 
+Stress ~ c*pftrait + b1*pfstate + b2*favl_freq +b3*favl_eval + b4*PA_Outdoor + b5*Digital + b6*favl_chng_r3 + b7*ORFreq + b8*ORIdeal + b9*ORChng 
+
+# mediator models
+pfstate ~ a1*pftrait 
+favl_freq ~ a2*pftrait
+favl_eval ~ a3*pftrait
+PA_Outdoor ~ a4*pftrait
+Digital ~ a5*pftrait
+favl_chng_r3 ~ a6*pftrait
+ORFreq ~ a7*pftrait
+ORIdeal ~ a8*pftrait
+ORChng ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+```{r}
+#insert image
+knitr::include_graphics("Model2.2.1c.png")
+```
+
+```{r}
+#Model 2.2.1c
+
+model <- '
+
+# outcome model 
+PHChgn ~ c*pftrait + b1*pfstate + b2*favl_freq +b3*favl_eval + b4*PA_Outdoor + b5*Digital + b6*favl_chng_r3 + b7*ORFreq + b8*ORIdeal + b9*ORChng 
+
+# mediator models
+pfstate ~ a1*pftrait 
+favl_freq ~ a2*pftrait
+favl_eval ~ a3*pftrait
+PA_Outdoor ~ a4*pftrait
+Digital ~ a5*pftrait
+favl_chng_r3 ~ a6*pftrait
+ORFreq ~ a7*pftrait
+ORIdeal ~ a8*pftrait
+ORChng ~ a9*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+indirect5  := a5*b5
+indirect6  := a6*b6
+indirect7  := a7*b7
+indirect8  := a8*b8
+indirect9  := a9*b9
+
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4) + (a5*b5) + (a6*b6) + (a7*b7)+ (a8*b8)+ (a9*b9)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+### Multiple X, Single Y
+```{r}
+#insert image
+knitr::include_graphics("Model2.2.2a.png")
+```
+
+```{r}
+#Model2.2.2a
+
+model <- '
+
+# outcome model 
+EWB ~ c1*uninhib + c2*sptns + c3*funmtv + b1*pfstate + b2*favl_freq +b3*favl_eval + b4*PA_Outdoor + b5*Digital + b6*favl_chng_r3 + b7*ORFreq + b8*ORIdeal + b9*ORChng 
+
+# mediator models
+pfstate ~ a11*uninhib  + a12*sptns + a13*funmtv
+favl_freq ~ a21*uninhib + a22*sptns + a23*funmtv
+favl_eval ~ a31*uninhib + a32*sptns + a33*funmtv
+PA_Outdoor ~ a41*uninhib + a42*sptns + a43*funmtv
+Digital ~ a51*uninhib + a52*sptns + a53*funmtv
+favl_chng_r3 ~ a61*uninhib + a62*sptns + a63*funmtv
+ORFreq ~ a71*uninhib + a72*sptns + a73*funmtv
+ORIdeal ~ a81*uninhib + a82*sptns + a83*funmtv
+ORChng ~ a91*uninhib + a92*sptns + a93*funmtv
+
+
+# indirect effects (IDE)
+indirect11  := a11*b1
+indirect21  := a21*b2
+indirect31  := a31*b3
+indirect41  := a41*b4
+indirect51  := a51*b5
+indirect61  := a61*b6
+indirect71  := a71*b7
+indirect81  := a81*b8
+indirect91  := a91*b9
+
+indirect12  := a12*b1
+indirect22  := a22*b2
+indirect32  := a32*b3
+indirect42  := a42*b4
+indirect52  := a52*b5
+indirect62  := a62*b6
+indirect72  := a72*b7
+indirect82  := a82*b8
+indirect92  := a92*b9
+
+indirect13  := a13*b1
+indirect23  := a23*b2
+indirect33  := a33*b3
+indirect43  := a43*b4
+indirect53  := a53*b5
+indirect63  := a63*b6
+indirect73  := a73*b7
+indirect83  := a83*b8
+indirect93  := a93*b9
+
+# total effect
+cprime := (c1 + c2 + c3) #equivalent for 3?
+total := cprime + (a11*b1) + (a21*b2) + (a31*b3) + (a41*b4) + (a51*b5) + (a61*b6) + (a71*b7)+ (a81*b8)+ (a91*b9) + (a12*b1) + (a22*b2) + (a32*b3) + (a42*b4) + (a52*b5) + (a62*b6) + (a72*b7)+ (a82*b8)+ (a92*b9)+ (a13*b1) + (a23*b2) + (a33*b3) + (a43*b4) + (a53*b5) + (a63*b6) + (a73*b7)+ (a83*b8)+ (a93*b9)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit)
+```
+```{r}
+#insert image
+knitr::include_graphics("Model2.2.2b.png")
+```
+
+```{r}
+#Model2.2.2b
+
+model <- '
+
+# outcome model 
+Stress ~ c1*uninhib + c2*sptns + c3*funmtv + b1*pfstate + b2*favl_freq +b3*favl_eval + b4*PA_Outdoor + b5*Digital + b6*favl_chng_r3 + b7*ORFreq + b8*ORIdeal + b9*ORChng 
+
+# mediator models
+pfstate ~ a11*uninhib  + a12*sptns + a13*funmtv
+favl_freq ~ a21*uninhib + a22*sptns + a23*funmtv
+favl_eval ~ a31*uninhib + a32*sptns + a33*funmtv
+PA_Outdoor ~ a41*uninhib + a42*sptns + a43*funmtv
+Digital ~ a51*uninhib + a52*sptns + a53*funmtv
+favl_chng_r3 ~ a61*uninhib + a62*sptns + a63*funmtv
+ORFreq ~ a71*uninhib + a72*sptns + a73*funmtv
+ORIdeal ~ a81*uninhib + a82*sptns + a83*funmtv
+ORChng ~ a91*uninhib + a92*sptns + a93*funmtv
+
+
+# indirect effects (IDE)
+indirect11  := a11*b1
+indirect21  := a21*b2
+indirect31  := a31*b3
+indirect41  := a41*b4
+indirect51  := a51*b5
+indirect61  := a61*b6
+indirect71  := a71*b7
+indirect81  := a81*b8
+indirect91  := a91*b9
+
+indirect12  := a12*b1
+indirect22  := a22*b2
+indirect32  := a32*b3
+indirect42  := a42*b4
+indirect52  := a52*b5
+indirect62  := a62*b6
+indirect72  := a72*b7
+indirect82  := a82*b8
+indirect92  := a92*b9
+
+indirect13  := a13*b1
+indirect23  := a23*b2
+indirect33  := a33*b3
+indirect43  := a43*b4
+indirect53  := a53*b5
+indirect63  := a63*b6
+indirect73  := a73*b7
+indirect83  := a83*b8
+indirect93  := a93*b9
+
+# total effect
+cprime := (c1 + c2 + c3) #equivalent for 3?
+total := cprime + (a11*b1) + (a21*b2) + (a31*b3) + (a41*b4) + (a51*b5) + (a61*b6) + (a71*b7)+ (a81*b8)+ (a91*b9) + (a12*b1) + (a22*b2) + (a32*b3) + (a42*b4) + (a52*b5) + (a62*b6) + (a72*b7)+ (a82*b8)+ (a92*b9)+ (a13*b1) + (a23*b2) + (a33*b3) + (a43*b4) + (a53*b5) + (a63*b6) + (a73*b7)+ (a83*b8)+ (a93*b9)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit)
+```
+```{r}
+#insert image
+knitr::include_graphics("Model2.2.2c.png")
+```
+
+```{r}
+#Model2.2.2b
+
+model <- '
+
+# outcome model 
+PHChgn ~ c1*uninhib + c2*sptns + c3*funmtv + b1*pfstate + b2*favl_freq +b3*favl_eval + b4*PA_Outdoor + b5*Digital + b6*favl_chng_r3 + b7*ORFreq + b8*ORIdeal + b9*ORChng 
+
+# mediator models
+pfstate ~ a11*uninhib  + a12*sptns + a13*funmtv
+favl_freq ~ a21*uninhib + a22*sptns + a23*funmtv
+favl_eval ~ a31*uninhib + a32*sptns + a33*funmtv
+PA_Outdoor ~ a41*uninhib + a42*sptns + a43*funmtv
+Digital ~ a51*uninhib + a52*sptns + a53*funmtv
+favl_chng_r3 ~ a61*uninhib + a62*sptns + a63*funmtv
+ORFreq ~ a71*uninhib + a72*sptns + a73*funmtv
+ORIdeal ~ a81*uninhib + a82*sptns + a83*funmtv
+ORChng ~ a91*uninhib + a92*sptns + a93*funmtv
+
+
+# indirect effects (IDE)
+indirect11  := a11*b1
+indirect21  := a21*b2
+indirect31  := a31*b3
+indirect41  := a41*b4
+indirect51  := a51*b5
+indirect61  := a61*b6
+indirect71  := a71*b7
+indirect81  := a81*b8
+indirect91  := a91*b9
+
+indirect12  := a12*b1
+indirect22  := a22*b2
+indirect32  := a32*b3
+indirect42  := a42*b4
+indirect52  := a52*b5
+indirect62  := a62*b6
+indirect72  := a72*b7
+indirect82  := a82*b8
+indirect92  := a92*b9
+
+indirect13  := a13*b1
+indirect23  := a23*b2
+indirect33  := a33*b3
+indirect43  := a43*b4
+indirect53  := a53*b5
+indirect63  := a63*b6
+indirect73  := a73*b7
+indirect83  := a83*b8
+indirect93  := a93*b9
+
+# total effect
+cprime := (c1 + c2 + c3) #equivalent for 3?
+total := cprime + (a11*b1) + (a21*b2) + (a31*b3) + (a41*b4) + (a51*b5) + (a61*b6) + (a71*b7)+ (a81*b8)+ (a91*b9) + (a12*b1) + (a22*b2) + (a32*b3) + (a42*b4) + (a52*b5) + (a62*b6) + (a72*b7)+ (a82*b8)+ (a92*b9)+ (a13*b1) + (a23*b2) + (a33*b3) + (a43*b4) + (a53*b5) + (a63*b6) + (a73*b7)+ (a83*b8)+ (a93*b9)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit)
+```
+### Multiple X, Single Y - PFSTATE
+```{r}
+#insert image
+knitr::include_graphics("Model2.2.3a.png")
+```
+```{r}
+#Model 2.2.3a
+
+model <- '
+
+# outcome model 
+EWB ~ c*pftrait + b1*immersion + b2*active +b3*pstvafct + b4*intnctrl
+
+# mediator models
+immersion ~ a1*pftrait 
+active ~ a2*pftrait
+pstvafct ~ a3*pftrait
+intnctrl ~ a4*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+
+```{r}
+#Model2.2.3a
+
+model <- '
+
+# outcome model 
+EWB ~ c1*uninhib + c2*sptns + c3*funmtv + b1*immersion + b2*active +b3*pstvafct + b4*intnctrl 
+
+# mediator models
+immersion ~ a11*uninhib  + a12*sptns + a13*funmtv
+active ~ a21*uninhib + a22*sptns + a23*funmtv
+pstvafct ~ a31*uninhib + a32*sptns + a33*funmtv
+intnctrl ~ a41*uninhib + a42*sptns + a43*funmtv
+
+# indirect effects (IDE)
+indirect11  := a11*b1
+indirect21  := a21*b2
+indirect31  := a31*b3
+indirect41  := a41*b4
+
+indirect12  := a12*b1
+indirect22  := a22*b2
+indirect32  := a32*b3
+indirect42  := a42*b4
+
+indirect13  := a13*b1
+indirect23  := a23*b2
+indirect33  := a33*b3
+indirect43  := a43*b4
+
+# total effect
+cprime := (c1 + c2 + c3) #equivalent for 3?
+total := cprime + (a11*b1) + (a21*b2) + (a31*b3) + (a41*b4) + (a12*b1) + (a22*b2) + (a32*b3) + (a42*b4) + (a13*b1) + (a23*b2) + (a33*b3) + (a43*b4)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit)
+```
+```{r}
+#insert image
+knitr::include_graphics("Model2.2.3b.png")
+```
+```{r}
+#Model 2.2.3b
+
+model <- '
+
+# outcome model 
+Stress ~ c*pftrait + b1*immersion + b2*active +b3*pstvafct + b4*intnctrl
+
+# mediator models
+immersion ~ a1*pftrait 
+active ~ a2*pftrait
+pstvafct ~ a3*pftrait
+intnctrl ~ a4*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+
+```{r}
+#Model2.2.3b
+
+model <- '
+
+# outcome model 
+Stress ~ c1*uninhib + c2*sptns + c3*funmtv + b1*immersion + b2*active +b3*pstvafct + b4*intnctrl 
+
+# mediator models
+immersion ~ a11*uninhib  + a12*sptns + a13*funmtv
+active ~ a21*uninhib + a22*sptns + a23*funmtv
+pstvafct ~ a31*uninhib + a32*sptns + a33*funmtv
+intnctrl ~ a41*uninhib + a42*sptns + a43*funmtv
+
+# indirect effects (IDE)
+indirect11  := a11*b1
+indirect21  := a21*b2
+indirect31  := a31*b3
+indirect41  := a41*b4
+
+indirect12  := a12*b1
+indirect22  := a22*b2
+indirect32  := a32*b3
+indirect42  := a42*b4
+
+indirect13  := a13*b1
+indirect23  := a23*b2
+indirect33  := a33*b3
+indirect43  := a43*b4
+
+# total effect
+cprime := (c1 + c2 + c3) #equivalent for 3?
+total := cprime + (a11*b1) + (a21*b2) + (a31*b3) + (a41*b4) + (a12*b1) + (a22*b2) + (a32*b3) + (a42*b4) + (a13*b1) + (a23*b2) + (a33*b3) + (a43*b4)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit)
+```
+
+```{r}
+#insert image
+knitr::include_graphics("Model2.2.3c.png")
+```
+```{r}
+#Model 2.2.3c
+
+model <- '
+
+# outcome model 
+PHChgn ~ c*pftrait + b1*immersion + b2*active +b3*pstvafct + b4*intnctrl
+
+# mediator models
+immersion ~ a1*pftrait 
+active ~ a2*pftrait
+pstvafct ~ a3*pftrait
+intnctrl ~ a4*pftrait
+
+# indirect effects (IDE)
+indirect1  := a1*b1
+indirect2  := a2*b2
+indirect3  := a3*b3
+indirect4  := a4*b4
+
+
+# total effect
+total := c + (a1*b1) + (a2*b2) + (a3*b3) + (a4*b4)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+
+```{r}
+#Model2.2.3c
+
+model <- '
+
+# outcome model 
+PHChgn ~ c1*uninhib + c2*sptns + c3*funmtv + b1*immersion + b2*active +b3*pstvafct + b4*intnctrl 
+
+# mediator models
+immersion ~ a11*uninhib  + a12*sptns + a13*funmtv
+active ~ a21*uninhib + a22*sptns + a23*funmtv
+pstvafct ~ a31*uninhib + a32*sptns + a33*funmtv
+intnctrl ~ a41*uninhib + a42*sptns + a43*funmtv
+
+# indirect effects (IDE)
+indirect11  := a11*b1
+indirect21  := a21*b2
+indirect31  := a31*b3
+indirect41  := a41*b4
+
+indirect12  := a12*b1
+indirect22  := a22*b2
+indirect32  := a32*b3
+indirect42  := a42*b4
+
+indirect13  := a13*b1
+indirect23  := a23*b2
+indirect33  := a33*b3
+indirect43  := a43*b4
+
+# total effect
+cprime := (c1 + c2 + c3) #equivalent for 3?
+total := cprime + (a11*b1) + (a21*b2) + (a31*b3) + (a41*b4) + (a12*b1) + (a22*b2) + (a32*b3) + (a42*b4) + (a13*b1) + (a23*b2) + (a33*b3) + (a43*b4)
+'
+
+fit <- sem(model, data=model2.2data)
+
+summary(fit)
+```
+# Model 3
+```{r}
+#insert image
+knitr::include_graphics("Model3.png")
+```
+
+```{r}
+model3data <- model2.1data
+model3data$XM1 <- model3data$pftrait*model3data$COVID_RiskStress
+model3data$XM2 <- model3data$pftrait*model3data$NegPM
+model3data$XM3 <- model3data$pftrait*model3data$loneliness_isolation
+model3data$XM4 <- model3data$pftrait*model3data$COV_Outlook
+model3data$XM5 <- model3data$pftrait*model3data$resilience
+model3data$XM6 <- model3data$pftrait*model3data$Social_total
+```
+
+save Model 3 dataset for use in Mplus
+```{r}
+model3_output <- model3data
+
+model3_output <- subset(model3_output, select = -c(uninhib, sptns, funmtv, Depression, COVID_RiskGeneral, COVID_RiskSelf, COVID_Precaution, PosPM, loneliness, isolation, SigOth, Fmly, Frnd, COVID_Precaution_t, PosPM_t, XM1, XM2, XM3, XM4, XM5, XM6))
+
+write.table(model3_output, file="model3.dat", sep=" ", quote=FALSE, col.names = FALSE, row.names=FALSE)
+```
+
+## Single X, Single M, Single Y
+```{r}
+#insert image
+knitr::include_graphics("Model3.1.png")
+```
+
+```{r}
+#Miles 2015
+#model7 <- “
+ # del ~ cprime * male
+  #del ~ b * respect
+  #del ~ bprime * maleXResp
+
+  #respect ~ a * male
+  #respect ~~ maleXResp
+  #male ~~ maleXResp
+  
+  #bmale:= b + bprime
+  #indMale:= bmale * a
+  #indFemale:= b * a
+  #indDiff:= indMale – indFemale”
+  
+#fit7 <- sem(model7, data=d, fixed.x=FALSE, + se=“bootstrap”)
+#summary(fit7)
+```
+
+```{r}
+#from Miles 2015
+#Single X - pftrait, Single M - resilience, Single Y - EWB
+model <- "
+  EWB ~ cprime * pftrait
+  EWB ~ b * resilience
+  EWB ~ bprime * XM5
+
+  resilience ~ a * pftrait
+  resilience ~~ XM5
+  pftrait ~~ XM5
+  
+  bpftrait:= b + bprime
+  indpftrait:= bpftrait * a"
+
+fit <- sem(model, data=model3data, se="bootstrap", bootstrap = 1000)
+
+summary(fit, fit.measures=TRUE,  estimates=TRUE, ci=TRUE)
+```
+
+```{r}
+#model <- "
+#  EWB ~ cprime*pftrait + b1*COVID_RiskStress + b2*NegPM + b3*loneliness_isolation #+ b4*resilience + b5*resilience + b6*Social_total
+#"
+```
+

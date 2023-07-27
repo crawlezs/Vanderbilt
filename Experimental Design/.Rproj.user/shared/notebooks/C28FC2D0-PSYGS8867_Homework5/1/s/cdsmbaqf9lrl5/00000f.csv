@@ -1,0 +1,1 @@
+"0","plot(result$points,asp = 1,ylim=c(-2000,2000))"

@@ -1,0 +1,295 @@
+!! Code from Stride et al (2015) 
+
+TITLE:	Moderated mediation analysis of play-2-cope data, based on PROCESS model 74
+DATA: 	FILE IS model3.dat;
+
+! X - Pftrait
+! Y1 - EWB
+! Y2 - Stress
+! Y3 - Physical Change
+! M1 - COVID Outlook
+! M2 - COVID Risk Stress
+! M3 - Neg PM
+! M4 - Social Support Total
+! M5 - Resilience
+! M6 - Loneliness/Isolation
+
+VARIABLE: 	NAMES ARE X Y1-Y3 M1-M6;
+	USEVARIABLES ARE X Y1-Y3 M1-M6 XM1 - XM6;
+
+DEFINE: 
+   XM1 = X * M1;
+   XM2 = X * M2;
+   XM3 = X * M3;
+   XM4 = X * M4;
+   XM5 = X * M5;
+   XM6 = X * M6;
+ 
+ANALYSIS:
+   TYPE = GENERAL;
+   ESTIMATOR = ML;
+   BOOTSTRAP = 10000;
+   
+! In model statement name each path using parentheses
+MODEL:
+   Y1 ON X XM1 XM2 XM3 XM4 XM5 XM6;
+   Y2 ON X XM1 XM2 XM3 XM4 XM5 XM6;
+   Y3 ON X XM1 XM2 XM3 XM4 XM5 XM6;
+   
+   Y1 ON M1 (b1.1);
+   Y2 ON M1 (b1.2);
+   Y3 ON M1 (b1.3);
+   
+   Y1 ON M2 (b2.1);
+   Y2 ON M2 (b2.2);
+   Y3 ON M2 (b2.3); 
+   
+   Y1 ON M3 (b3.1);
+   Y2 ON M3 (b3.2);
+   Y3 ON M3 (b3.3);
+   
+   Y1 ON M4 (b4.1);
+   Y2 ON M4 (b4.2);
+   Y3 ON M4 (b4.3);
+   
+   Y1 ON M5 (b5.1);
+   Y2 ON M5 (b5.2);
+   Y3 ON M5 (b5.3);
+   
+   Y1 ON M6 (b6.1);
+   Y2 ON M6 (b6.2);
+   Y3 ON M6 (b6.3);
+   
+   M1 ON X (a1);
+   M2 ON X (a2);
+   M3 ON X (a3);
+   M4 ON X (a4);
+   M5 ON X (a5);
+   M6 ON X (a6);
+   
+   Y1 ON X (cdash1);   ! direct effect of X on Y1
+   Y2 ON X (cdash2);   ! direct effect of X on Y2
+   Y3 ON X (cdash3);   ! direct effect of X on Y3
+   
+ 
+! Use model constraint to calculate indirect effect
+
+MODEL CONSTRAINT:
+   NEW(LOW_X MED_X HIGH_X IND_LOWX1 IND_MEDX1 IND_HIX1);
+	LOW_X = #2.3;   ! chosen low value of X: -2SD
+	MED_X = #3.9;   ! chosen medium value of X: sample mean
+	HIGH_X = #5.5;   ! chosen high value of X: +2SD
+	
+! Calc conditional indirect effects of X on Y via M for low, medium, high values of X
+! Use loop plot to plot conditional indirect effect of X on Y
+! NOTE - values of 1,5 in LOOP() statement need to be replaced by
+! logical min and max limits of predictor X used in analysis
+
+    ! Indirect Effects via M1	
+	! X on Y1 via M1
+
+	IND_LOWX1.1 = a1*b1.1 + a1*cdash1*LOW_X;
+	IND_MEDX1.1 = a1*b1.1 + a1*cdash1*MED_X;
+	IND_HIX1.1 = a1*b1.1 + a1*cdash1*HIGH_X;
+	
+
+	PLOT(INDX1);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a1*b1.1 + a1*cdash1*XVAL)*XVAL;
+	
+	! X on Y2 via M1
+	
+	IND_LOWX1.2 = a1*b1.2 + a1*cdash2*LOW_X;
+	IND_MEDX1.2 = a1*b1.2 + a1*cdash2*MED_X;
+	IND_HIX1.2 = a1*b1.2 + a1*cdash2*HIGH_X;
+	
+
+	PLOT(INDX1);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a1*b1.2 + a1*cdash2*XVAL)*XVAL;
+	
+	! X on Y3 via M1
+	
+	IND_LOWX1.3 = a1*b1.3 + a1*cdash3*LOW_X;
+	IND_MEDX1.3 = a1*b1.3 + a1*cdash3*MED_X;
+	IND_HIX1.3 = a1*b1.3 + a1*cdash3*HIGH_X;
+	
+
+	PLOT(INDX1);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a1*b1.3 + a1*cdash3*XVAL)*XVAL;
+	
+   ! Indirect Effects via M2
+	! X on Y1 via M2
+
+	IND_LOWX2.1 = a2*b2.1 + a2*cdash1*LOW_X;
+	IND_MEDX2.1 = a2*b2.1 + a2*cdash1*MED_X;
+	IND_HIX2.1 = a2*b2.1 + a2*cdash1*HIGH_X;
+	
+
+	PLOT(INDX2);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a2*b2.1 + a2*cdash1*XVAL)*XVAL;
+	
+	! X on Y2 via M2
+	
+	IND_LOWX2.2 = a2*b2.2 + a2*cdash2*LOW_X;
+	IND_MEDX2.2 = a2*b2.2 + a2*cdash2*MED_X;
+	IND_HIX2.2 = a2*b2.2 + a2*cdash2*HIGH_X;
+	
+
+	PLOT(INDX2);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a2*b2.2 + a2*cdash2*XVAL)*XVAL;
+	
+	! X on Y3 via M2
+	
+	IND_LOWX2.3 = a2*b2.3 + a2*cdash3*LOW_X;
+	IND_MEDX2.3 = a2*b2.3 + a2*cdash3*MED_X;
+	IND_HIX2.3 = a2*b2.3 + a2*cdash3*HIGH_X;
+	
+
+	PLOT(INDX2);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a2*b2.3 + a2*cdash3*XVAL)*XVAL;
+	
+   ! Indirect Effects via M3
+	! X on Y1 via M3
+
+	IND_LOWX3.1 = a3*b3.1 + a3*cdash1*LOW_X;
+	IND_MEDX3.1 = a3*b3.1 + a3*cdash1*MED_X;
+	IND_HIX3.1 = a3*b3.1 + a3*cdash1*HIGH_X;
+	
+
+	PLOT(INDX3);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a3*b3.1 + a3*cdash1*XVAL)*XVAL;
+	
+	! X on Y2 via M3
+	
+	IND_LOWX3.2 = a3*b3.2 + a3*cdash2*LOW_X;
+	IND_MEDX3.2 = a3*b3.2 + a3*cdash2*MED_X;
+	IND_HIX3.2 = a3*b3.2 + a3*cdash2*HIGH_X;
+	
+
+	PLOT(INDX3);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a3*b3.2 + a3*cdash2*XVAL)*XVAL;
+	
+	! X on Y3 via M3
+	
+	IND_LOWX3.3 = a3*b3.3 + a3*cdash3*LOW_X;
+	IND_MEDX3.3 = a3*b3.3 + a3*cdash3*MED_X;
+	IND_HIX3.3 = a3*b3.3 + a3*cdash3*HIGH_X;
+	
+
+	PLOT(INDX3);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a3*b3.3 + a3*cdash3*XVAL)*XVAL;
+	
+   ! Indirect Effects via M4
+	! X on Y1 via M4
+
+	IND_LOWX4.1 = a4b4.1 + a4*cdash1*LOW_X;
+	IND_MEDX4.1 = a4*b4.1 + a4*cdash1*MED_X;
+	IND_HIX4.1 = a4*b4.1 + a4*cdash1*HIGH_X;
+	
+
+	PLOT(INDX4);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a4*b4.1 + a4*cdash1*XVAL)*XVAL;
+	
+	! X on Y2 via M4
+	
+	IND_LOWX4.2 = a4*b4.2 + a4*cdash2*LOW_X;
+	IND_MEDX4.2 = a4*b4.2 + a4*cdash2*MED_X;
+	IND_HIX4.2 = a4*b4.2 + a4*cdash2*HIGH_X;
+	
+
+	PLOT(INDX4);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a4*b4.2 + a4*cdash2*XVAL)*XVAL;
+	
+	! X on Y3 via M4
+	
+	IND_LOWX4.3 = a4*b4.3 + a4*cdash3*LOW_X;
+	IND_MEDX4.3 = a4*b4.3 + a4*cdash3*MED_X;
+	IND_HIX4.3 = a4*b4.3 + a4*cdash3*HIGH_X;
+	
+
+	PLOT(INDX4);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a4*b4.3 + a4*cdash3*XVAL)*XVAL;
+	
+   ! Indirect Effects via M5
+	! X on Y1 via M5
+
+	IND_LOWX5.1 = a5*b5.1 + a5*cdash1*LOW_X;
+	IND_MEDX5.1 = a5*b5.1 + a5*cdash1*MED_X;
+	IND_HIX5.1 = a5*b5.1 + a5*cdash1*HIGH_X;
+	
+
+	PLOT(INDX5);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a5*b5.1 + a5*cdash1*XVAL)*XVAL;
+	
+	! X on Y2 via M5
+	
+	IND_LOWX5.2 = a5*b5.2 + a5*cdash2*LOW_X;
+	IND_MEDX5.2 = a5*b5.2 + a5*cdash2*MED_X;
+	IND_HIX5.2 = a5*b5.2 + a5*cdash2*HIGH_X;
+	
+
+	PLOT(INDX5);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a5*b5.2 + a5*cdash2*XVAL)*XVAL;
+	
+	! X on Y3 via M5
+	
+	IND_LOWX5.3 = a5*b5.3 + a5*cdash3*LOW_X;
+	IND_MEDX5.3 = a5*b5.3 + a5*cdash3*MED_X;
+	IND_HIX5.3 = a5*b5.3 + a5*cdash3*HIGH_X;
+	
+
+	PLOT(INDX5);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a5*b5.3 + a5*cdash3*XVAL)*XVAL;
+	
+   ! Indirect Effects via M6
+	! X on Y1 via M6
+
+	IND_LOWX6.1 = a6*b6.1 + a6*cdash1*LOW_X;
+	IND_MEDX6.1 = a6*b6.1 + a6*cdash1*MED_X;
+	IND_HIX6.1 = a6*b6.1 + a6*cdash1*HIGH_X;
+	
+
+	PLOT(INDX6);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a6*b6.1 + a6*cdash1*XVAL)*XVAL;
+	
+	! X on Y2 via M6
+	
+	IND_LOWX6.2 = a6*b6.2 + a6*cdash2*LOW_X;
+	IND_MEDX6.2 = a6*b6.2 + a6*cdash2*MED_X;
+	IND_HIX6.2 = a6*b6.2 + a6*cdash2*HIGH_X;
+	
+
+	PLOT(INDX6);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a6*b6.2 + a6*cdash2*XVAL)*XVAL;
+	
+	! X on Y3 via M6
+	
+	IND_LOWX6.3 = a6*b6.3 + a6*cdash3*LOW_X;
+	IND_MEDX6.3 = a6*b6.3 + a6*cdash3*MED_X;
+	IND_HIX6.3 = a6*b6.3 + a6*cdash3*HIGH_X;
+	
+
+	PLOT(INDX6);
+	LOOP(XVAL,1,6,0.1);
+	INDX = (a6*b6.3 + a6*cdash3*XVAL)*XVAL;
+PLOT:
+   TYPE = plot2;
+OUTPUT:
+   STAND CINT(bcbootstrap);
+ 

@@ -1,0 +1,2 @@
+"0","result <- cmdscale(data, k=2, eig=TRUE)"
+"0","plot(result$eig)"

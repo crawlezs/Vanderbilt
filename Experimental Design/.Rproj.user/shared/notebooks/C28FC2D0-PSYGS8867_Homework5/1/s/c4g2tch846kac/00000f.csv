@@ -1,0 +1,3 @@
+"0","points<-result$points"
+"0","points[,2]<- -points[,2]"
+"0","plot(points,asp = 1,ylim=c(-2000,2000))"

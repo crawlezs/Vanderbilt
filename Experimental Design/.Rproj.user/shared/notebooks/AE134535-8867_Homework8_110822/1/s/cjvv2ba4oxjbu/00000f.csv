@@ -1,0 +1,8 @@
+"0","#What proportion of the total variance of the outcome variables is explained by the 1st CV of the outcome variables."
+"0","colSums(res$loading.y^2)/4"
+"1","       1 "
+"1","
+"
+"1","0.501927 "
+"1","
+"

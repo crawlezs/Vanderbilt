@@ -1,0 +1,10 @@
+---
+title: "8867_Homework5_101822"
+output: html_document
+date: '2022-10-19'
+---
+
+```{r}
+pollution <- read.table("USairpollution.dat", header = TRUE)
+```
+

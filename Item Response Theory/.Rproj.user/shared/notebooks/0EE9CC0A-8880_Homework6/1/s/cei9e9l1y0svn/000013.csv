@@ -1,0 +1,5 @@
+"0","#calculate DIF"
+"0","DIF <- lordif(y,group2)"
+"2","Error in collapse(resp.data[, selection[i]], group, minCell) : 
+  items must have at least two valid response categories with 5 or more cases.
+"

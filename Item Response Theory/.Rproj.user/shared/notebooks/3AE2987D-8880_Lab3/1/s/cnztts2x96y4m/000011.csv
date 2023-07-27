@@ -1,0 +1,3 @@
+"0","## Rasch model"
+"0",""
+"0","binary <- read.table(""Lab 2/binary.txt"",header=TRUE)"

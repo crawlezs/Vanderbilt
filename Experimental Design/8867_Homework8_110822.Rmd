@@ -1,0 +1,133 @@
+---
+title: "8867_Homework8_110822"
+output: html_document
+date: "2022-11-09"
+---
+```{r}
+#load dataset
+N <- 150
+survey_R <- diag(1, 10)
+survey_R[upper.tri(survey_R, TRUE)] <- scan('SERVICE_QUALITY.txt')
+survey_R <- t(survey_R)
+survey_R[upper.tri(survey_R, TRUE)] <- scan('SERVICE_QUALITY.txt')
+
+#create row names
+x_labels <- c("appearance", "lifestyle","status", "intensity", "disclosure","intention")
+y_labels <- c("trust", "satisfaction", "cross_sell", "total_sales")
+
+colnames(survey_R) <- rownames(survey_R) <- c(y_labels, x_labels)
+survey_R
+```
+
+### Q1.	
+Calculate and test the canonical correlations. Display and interpret the results of their tests, and draw conclusions. Calculate the GCD between the two sets of variables using the canonical correlations. Find the proportion of GCD explained by the first pair of CVs. 
+
+```{r}
+#Calculate and test the canonical correlations
+res <- CCA_cor(survey_R,var.x = 5:10, var.y = 1:4, cor.only = TRUE )
+res
+```
+```{r}
+library(CCP)
+p.asym(rho=res$ca.cor, N, p=6, q=4, tstat = "Pillai")
+```
+Two of the four cannonical correlations are signficiant, 1 to 4 (p = 0.000) and 2 to 4 (p = 0.009). So we retain at most two pairs of CVs.
+
+```{r}
+#Calculate the GCD between the two sets of variables using the canonical correlations. 
+plot(res$ca.cor^2, xlab="", ylab="squared canonical correlations")
+```
+
+```{r}
+#Find the proportion of GCD explained by the first pair of CVs. 
+cumsum(res$ca.cor^2)/sum(res$ca.cor^2)
+```
+
+The first pair of CVs explains 71.99% of GCD.
+
+### Q2.
+Extract the first pair of CVs. Express them in terms of the original (standardized) variables. What is the correlation between the first pair of CVs? 
+
+```{r}
+# Extract the first pair of CVs
+res <- CCA_cor(survey_R, var.x = 5:10, var.y = 1:4, m=1)
+
+res$weights.x
+res$weights.y
+```
+
+X1 = 0.27 (appearance) + 0.16 (lifestyle) + 0.16 (status) + 0.05 (intensity) + 0.13 (disclosure) + 0.60 (intention)
+
+Y1 = 0.54 (trust) + 0.36 (satisfaction) + 0.19 (cross sell) + 0.24 (total sales)
+
+```{r}
+#What is the correlation between the first pair of CVs? 
+res$loading.x
+res$loading.y
+```
+
+
+### Q3.
+Show the two loading matrices. What proportion of the total variance of the outcome variables  is explained by the 1st CV of the outcome variables. Do the same for the explanatory variables (relation and interaction variables). 
+
+```{r}
+#Show the two loading matrices
+res$loading.x
+res$loading.y
+```
+
+```{r}
+#What proportion of the total variance of the outcome variables is explained by the 1st CV of the outcome variables.
+colSums(res$loading.y^2)/4
+```
+
+```{r}
+#Do the same for the explanatory variables (relation and interaction variables)
+colSums(res$loading.x^2)/6
+```
+
+### Q4.
+Extract the first PC from the six explanatory variables and find the PC weights wx. Then extract the first PC from the four outcome variables and find the PC weights wy. Calculate the correlation between the two PCs: wx′ Rxywy. (Rxy is the 6 × 4 matrix that contains the correlations between  the explanatory and outcome variables. It is an off-diagonal block of the input.) Compare the correlation between the two PCs to the correlation in Problem 2. Explain why one is greater than  the other. 
+
+```{r}
+# Extract the first PC from the six explanatory variables
+survey_explan <- survey_R[5:10, 5:10]
+
+res_explan <- principal(survey_explan, 1, rotate = "none")
+res_explan
+
+# Find the PC weights wx. 
+w_x <- res_explan$weights
+```
+
+```{r}
+# Extract the first PC from the four outcome variables 
+survey_outcome <- survey_R[1:4, 1:4]
+
+res_outcome <- principal(survey_outcome, 1, rotate = "none")
+res_outcome
+
+# Find the PC weights wy. 
+w_y <- res_outcome$weights
+```
+
+```{r}
+#Calculate the correlation between the two PCs: wx′ Rxywy. (Rxy is the 6 × 4 matrix that contains the correlations between  the explanatory and outcome variables. It is an off-diagonal block of the input.) 
+
+Rxy <- survey_R[5:10, 1:4]
+Rxy
+
+# w_x' * Rxy * w_y
+pc_cor <- t(w_x) %*% Rxy %*% w_y
+pc_cor
+
+#Compare the correlation between the two PCs to the correlation in Problem 2. Explain why one is greater than  the other. 
+```
+
+
+### Q5.
+Find the proportion of total variance in the six explanatory variables explained by their first PC. Find the proportion of total variance in four outcome variables explained by their first PC. Compare them to the proportions in Problem 3. Explain your finding. 
+
+The proportion of total variance in the explanatory variables explained by the first PC is [SS of loadings, res_explan]
+
+The proportion of total variance in the outcome variables explained by the first PC is [SS of loadings, res_outcome]

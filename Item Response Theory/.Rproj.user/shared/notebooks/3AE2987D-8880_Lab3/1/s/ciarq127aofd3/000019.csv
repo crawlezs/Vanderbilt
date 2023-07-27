@@ -1,0 +1,3 @@
+"0","## Importing polytomous data (polytomous.txt)"
+"0","poly <- read.table(""Lab 3/polytomous.txt"",header=TRUE)"
+"0","poly[1:10,] # Checking the first 10 rows"

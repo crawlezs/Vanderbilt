@@ -1,0 +1,127 @@
+---
+title: "Corbett_DataAnalysis_103122"
+output: html_document
+date: "2022-10-31"
+---
+
+```{r setup, include=FALSE}
+library(dplyr) #data wrangling
+library(haven) #data import
+library(tidyverse) # data wrangling
+library(summarytools)
+library(psych) # psych analysis
+library(readxl) # read xlsx 
+```
+
+# import dataset
+```{r}
+path <- 
+
+data_original <- read_excel(path)
+```
+
+# Youjin: descriptive statistics
+```{r descriptives, echo=FALSE}
+#check for missing values
+summary(data_original)
+
+#calculate the number of missing values per participant
+table(rowSums(is.na(data_original))) #max of 6 missing values per participant
+
+data_original %>%
+  filter(rowSums(is.na(data_original))>0) %>%
+  view() 
+##44 participants have at least two missing values
+#(1) 4 students do not have any intervention data (will be removed)
+#(2) From (1), 4 students additionally do not have pre-test data (remove?)
+#(3) From (1), 22 students additionally do not have post-test data (but 6 of them have follow-up data)
+
+    ##investigate missing data
+    missing <- data_original %>%
+      filter(rowSums(is.na(data_original))>0)
+    
+    summary(missing)
+    freq(missing$group) # more people in control have missing data
+    freq(missing$sex) # more males have missing data
+    
+#####missing data between treatment and control groups
+    
+#demographics
+summary(data_original) 
+##mean age: 12.6
+##mean severity: 7.4 (3-10 range)
+##mean IQ: 98 (60-140 range)
+##outliers in dependent variables
+freq(data_original$group) #55% in treatment, 45% in control
+freq(data_original$sex) #71% male, 29% female
+
+hist(data_original$face_rep_pre)
+hist(data_original$face_rep_post)
+hist(data_original$face_sng_pre)
+hist(data_original$face_sng_post)
+```
+
+# Zoe: Missing Data
+1. remove 4 participants with no clinical data
+
+```{r}
+#summary of missing data
+data_original[!complete.cases(data_original),]
+
+#remove participants w/o clinical data
+data_01 <- data_original[-c(53, 55, 56, 198),] 
+```
+
+2. run regressions with complete data (data_01)
+
+3. run regressions with FIML to account for missing data
+missing = 'fiml', fixed.x = F -
+
+
+### Becky: Regression w/ Sex
+
+```{r}
+# center data
+summary(data_01)
+  
+for(i in c(3,5:10)){
+  data_01c[,paste("centered", colnames(data_01)[i], sep="_")] <- 
+    data_01c[,i]-mean(data_01c[[i]])}
+  
+describeBy(data_01c, data_01c$sex, mat = TRUE)
+
+# Linear regression: single face w/ sex
+## Original dataset (data_01) ##
+
+sng_sex <- lm(face_sng_post ~ centered_face_sng_pre + sex + centered_face_sng_pre * sex, data = data_01c)
+
+summary(sng_sex)
+
+# Linear regression: repeated face w/ sex
+## Original dataset (data_01) ##
+
+
+rep_sex <- lm(face_rep_post ~ centered_face_rep_pre + sex + centered_face_rep_pre * sex, data = data_01c, #missing)
+
+summary(rep_sex)
+
+# Linear regression: single face w/ sex
+## Missing Data Procedure: FIML ##
+
+sng_sex_fiml <- lm(face_sng_post ~ centered_face_sng_pre + sex + centered_face_sng_pre * sex, data = data_01c, #missing)
+                   
+#sng_sex_fiml <- sem('face_sng_post ~ centered_face_sng_pre + sex + centered_face_sng_pre * sex', data = data_01c, missing = 'fiml', fixed.x = F)
+
+summary(sng_sex_fiml)
+
+# Linear regression: repeated face w/ sex
+## Missing Data Procedure: FIML ##
+
+rep_sex_fiml <- lm(face_rep_post ~ centered_face_rep_pre + sex + centered_face_rep_pre * sex, data = data_01c)
+
+summary(rep_sex_fiml)
+```
+
+
+
+

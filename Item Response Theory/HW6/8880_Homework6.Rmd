@@ -1,0 +1,129 @@
+---
+title: "8880_Homework6"
+output: html_document
+date: "2023-04-16"
+---
+```{r}
+library(lordif)
+library(tidyverse)
+```
+
+```{r}
+data <- read_csv("m@h_full.csv", na = "NA")
+data <- data[4:21]
+```
+
+```{r}
+summary(data)
+```
+
+# Try 1 - given code
+```{r}
+y <- subset(data, select = -TD)
+group <-data$TD
+```
+
+```{r}
+#y <- as.data.frame(y)
+#group <- as.data.frame(group)
+
+length(y)
+length(group)
+dim(y)
+dim(group)
+```
+
+```{r}
+#calculate DIF
+DIF <- lordif(y,group)
+
+DIF
+
+summary(DIF)
+```
+
+# Try 2 - transform y
+```{r}
+y2 <- matrix(0, 17, 347)
+
+for(c in 1:17){
+  for(r in 1:346){
+    x <- y[r,c]
+    y2[c,r] <- as.numeric(x)
+    r = r + 1
+  }
+  c = c + 1
+}
+
+
+```
+
+```{r}
+y2 <- as.data.frame(y2)
+group <- as.data.frame(group)
+
+length(y2)
+length(group)
+dim(y2)
+dim(group)
+```
+```{r}
+#calculate DIF
+DIF <- lordif(y2,group)
+
+DIF
+
+summary(DIF)
+```
+
+# Try 3 - transform group
+```{r}
+group2 <- matrix(0, 1, 347)
+
+for(r in 1:347){
+  x <- group[r,1]
+  group2[1,r] <- as.numeric(x)
+  r = r + 1
+}
+```
+
+```{r}
+group2 <- as.data.frame(group2)
+y <- as.data.frame(y)
+
+length(y)
+length(group2)
+dim(y)
+dim(group2)
+```
+```{r}
+#calculate DIF
+DIF <- lordif(y,group2)
+
+DIF
+
+summary(DIF)
+```
+```{r}
+#y2 <- as.data.frame(y2)
+#group <- as.data.frame(group)
+
+length(y2)
+length(group2)
+dim(y2)
+dim(group2)
+```
+
+```{r}
+#calculate DIF
+DIF <- lordif(y2,group2)
+
+DIF
+
+summary(DIF)
+```
+
+```{r}
+plot(DIF,labels=c("ASD","TD"),width=8,height=7,cex=0.8,lwd=1)
+```
+

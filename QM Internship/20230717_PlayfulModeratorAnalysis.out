@@ -1,0 +1,81 @@
+Mplus VERSION 8.10 DEMO (Mac)
+MUTHEN & MUTHEN
+07/18/2023   6:56 PM
+
+INPUT INSTRUCTIONS
+
+  !! Code from Stride et al (2015)
+
+  ! Predictor variable - X
+  ! Mediator variable(s) � M
+  ! Moderator variable(s) - (X)
+  ! Outcome variable - Y
+
+  TITLE: moderated mediation analysis of play-2-cope data, based on PROCESS model 74
+  DATA: FILE IS model3.dat;
+  VARIABLE: NAMES ARE pftrait EWB Stress PHChng COVID_Out COVID_RS NegPM SocialSupport Resil
+
+  DEFINE:
+     XM = pftrait * COVID_Out;
+
+  ANALYSIS:
+     TYPE = GENERAL;
+     ESTIMATOR = ML;
+     BOOTSTRAP = 10000;
+  ! In model statement name each path using parentheses
+  MODEL:
+     EWB ON COVID_Out (b1);
+     EWB ON pftrait (cdash1);   ! direct effect of X on Y
+     EWB ON XM (cdash2);
+     [COVID_Out] (a0);
+     COVID_Out ON pftrait (a1);
+  ! Use model constraint to calculate indirect effect
+  MODEL CONSTRAINT:
+     NEW(LOW_X MED_X HIGH_X IND_LOWX IND_MEDX IND_HIX);
+  	LOW_X = #2.3;   ! chosen low value of X: -2SD
+  	MED_X = #3.9;   ! chosen medium value of X: mean
+  	HIGH_X = #5.5;   ! chosen high value of X: +2SD
+  	
+  ! Calc conditional indirect effects of X on Y via M for low, medium, high values of X
+  	IND_LOWX = a1*b1 + a1*cdash2*LOW_X;
+  	IND_MEDX = a1*b1 + a1*cdash2*MED_X;
+  	IND_HIX = a1*b1 + a1*cdash2*HIGH_X;
+  	
+  ! Use loop plot to plot conditional indirect effect of X on Y
+  ! NOTE - values of 1,5 in LOOP() statement need to be replaced by
+  ! logical min and max limits of predictor X used in analysis
+  	PLOT(INDX);
+  	LOOP(XVAL,1,5,0.1);
+  	INDX = (a1*b1 + a1*cdash2*XVAL)*XVAL;
+  PLOT:
+     TYPE = plot2;
+  OUTPUT:
+     STAND CINT(bcbootstrap);
+
+
+*** WARNING
+  Input line exceeded 90 characters. Some input may be truncated.
+  VARIABLE: NAMES ARE pftrait EWB Stress PHChng COVID_Out COVID_RS NegPM SocialSupport Resili
+*** WARNING in VARIABLE command
+  Note that only the first 8 characters of variable names are used in the output.
+  Shorten variable names to avoid any confusion.
+*** ERROR in MODEL command
+  Unknown variable(s) in an ON statement:  XM
+
+Mplus VERSION 8.10 DEMO (Mac) has the following limitations:
+  Maximum number of dependent variables: 6
+  Maximum number of independent variables: 2
+  Maximum number of between variables: 2
+  Maximum number of continuous latent variables in time series analysis: 2
+
+
+MUTHEN & MUTHEN
+3463 Stoner Ave.
+Los Angeles, CA  90066
+
+Tel: (310) 391-9971
+Fax: (310) 391-8971
+Web: www.StatModel.com
+Support: Support@StatModel.com
+
+Copyright (c) 1998-2023 Muthen & Muthen

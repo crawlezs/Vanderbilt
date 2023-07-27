@@ -1,0 +1,21 @@
+---
+title: "8880_HW4"
+output: html_document
+date: "2023-04-01"
+---
+
+```{r}
+#load packages
+library(tidyverse)
+library(irtoys)
+library(ltm)
+library(mirt)
+library(eRm)
+```
+
+```{r}
+#import data
+poly <- read_csv("m@h.csv")
+poly <- poly[,1:17]
+```
+

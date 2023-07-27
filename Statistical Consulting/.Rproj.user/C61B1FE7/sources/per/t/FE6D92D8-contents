@@ -1,0 +1,66 @@
+---
+title: "Corbett 1 Becky"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+```{r}
+install.packages("tidyverse")
+```
+```{r}
+library("tidyverse")
+```
+
+```{r}
+data<-read_excel("Rawdata_Corbett1.xlsx")
+data
+```
+```{r}
+# Delete rows with missing values
+# remove na in r - remove rows - na.omit function / option
+data_noNA <- na.omit(data) 
+dim(data_noNA)
+```
+
+
+```{r}
+# apply it
+for(i in c(3,5:10)){
+  data_noNA[,paste("centered", colnames(data)[i], sep="_")] <- data_noNA[,i]-mean(data_noNA[[i]])
+}
+  
+data_noNA
+
+```
+
+```{r}
+summary(data_noNA)
+```
+
+```{r}
+library(psych)
+df<-data_noNA
+describeBy(df, df$sex, mat = TRUE) 
+```
+
+
+
+```{r}
+colnames(data_noNA)
+```
+
+```{r}
+# Linear Regression
+# Single Face, sex moderator
+sng_sex<-lm(face_sng_post~centered_face_sng_pre+sex+centered_face_sng_pre*sex,data = data_noNA)
+summary(sng_sex)
+```
+
+```{r}
+# Repeated Face, sex moderator
+rep_sex<-lm(face_rep_post~centered_face_rep_pre+sex+centered_face_rep_pre*sex,data = data_noNA)
+summary(rep_sex)
+```
+

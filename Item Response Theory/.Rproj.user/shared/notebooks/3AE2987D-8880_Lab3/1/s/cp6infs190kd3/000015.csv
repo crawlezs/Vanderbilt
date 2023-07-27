@@ -1,0 +1,8 @@
+"0",""
+"0","#warn.ord.colour=TRUE: Nonordinal threshold locations for polytomous items are coloured with this"
+"0","#colour to make them more visible. This is especially useful when there are"
+"0","#many items so that the plot is quite dense. The default is ""black"", so that there"
+"0","#is no distinction made."
+"0",""
+"0","#irug=TRUE: If TRUE (the default), all thresholds are plotted below the person distribution to"
+"0","#indicate where the included items are most informative."

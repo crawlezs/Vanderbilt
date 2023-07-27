@@ -1,0 +1,110 @@
+Mplus VERSION 8.10 DEMO (Mac)
+MUTHEN & MUTHEN
+07/18/2023   7:21 PM
+
+INPUT INSTRUCTIONS
+
+  !! Code from Stride et al (2015)
+
+  TITLE: moderated mediation analysis of play-2-cope data, based on PROCESS model 74
+  DATA: FILE IS model3.dat;
+  VARIABLE: NAMES ARE pftrait EWB Stress PHChng COV_Out COV_RS NegPM SocSupp Resilien LoneIs
+
+  DEFINE:
+     XM1 = pftrait * COV_Out;
+     XM2 = pftrait * COV_RS;
+     XM3 = pftrait * NegPM;
+     XM4 = pftrait * SocSupp;
+     XM5 = pftrait * Resilien;
+     XM6 = pftrait * LoneIsol;
+
+  ANALYSIS:
+     TYPE = GENERAL;
+     ESTIMATOR = ML;
+     BOOTSTRAP = 10000;
+
+  ! In model statement name each path using parentheses
+  MODEL:
+     EWB ON COV_Out (b1);
+     EWB ON COV_RS (b2);
+     EWB ON NegPM (b3);
+     EWB ON SocSupp (b4);
+     EWB ON Resilien (b5);
+     EWB ON LoneIsol (b6);
+
+     EWB ON pftrait (cdash1);   ! direct effect of X on Y
+
+     EWB ON XM1 (cdash2);
+     EWB ON XM2 (cdash3);
+     EWB ON XM3 (cdash4);
+     EWB ON XM4 (cdash5);
+     EWB ON XM5 (cdash6);
+     EWB ON XM6 (cdash7);
+
+     [COV_Out] (a10);
+     COVID_Out ON pftrait (a11);
+
+     [COV_RS] (a20);
+     COVID_RS ON pftrait (a21);
+
+     [NegPM] (a30);
+     NegOM ON pftrait (a31);
+
+     [SocSupp] (a40);
+     SocSupp ON pftrait (a41);
+
+     [Resilien] (a50);
+     Resilien ON pftrait (a51);
+
+     [LoneIsol] (a60);
+     LoneIsol ON pftrait (a61);
+
+
+  ! Use model constraint to calculate indirect effect
+  MODEL CONSTRAINT:
+     NEW(LOW_X1 MED_X1 HIGH_X1 IND_LOWX1 IND_MEDX1 IND_HIX1);
+  	LOW_X1 = #2.3;   ! chosen low value of X: -2SD
+  	MED_X1 = #3.9;   ! chosen medium value of X: mean
+  	HIGH_X1 = #5.5;   ! chosen high value of X: +2SD
+  	
+  ! Calc conditional indirect effects of X on Y via M for low, medium, high values of X
+  	IND_LOWX1 = a1*b1 + a1*cdash2*LOW_X1;
+  	IND_MEDX1 = a1*b1 + a1*cdash2*MED_X1;
+  	IND_HIX1 = a1*b1 + a1*cdash2*HIGH_X1;
+  	
+  ! Use loop plot to plot conditional indirect effect of X on Y
+  ! NOTE - values of 1,5 in LOOP() statement need to be replaced by
+  ! logical min and max limits of predictor X used in analysis
+  	PLOT(INDX1);
+  	LOOP(XVAL,1,5,0.1);
+  	INDX = (a1*b1 + a1*cdash2*XVAL)*XVAL;
+  PLOT:
+     TYPE = plot2;
+  OUTPUT:
+     STAND CINT(bcbootstrap);
+
+
+*** WARNING
+  Input line exceeded 90 characters. Some input may be truncated.
+  VARIABLE: NAMES ARE pftrait EWB Stress PHChng COV_Out COV_RS NegPM SocSupp Resilien LoneIso
+*** ERROR
+  Undefined variable used in transformation:
+  LONEISOL
+
+Mplus VERSION 8.10 DEMO (Mac) has the following limitations:
+  Maximum number of dependent variables: 6
+  Maximum number of independent variables: 2
+  Maximum number of between variables: 2
+  Maximum number of continuous latent variables in time series analysis: 2
+
+
+MUTHEN & MUTHEN
+3463 Stoner Ave.
+Los Angeles, CA  90066
+
+Tel: (310) 391-9971
+Fax: (310) 391-8971
+Web: www.StatModel.com
+Support: Support@StatModel.com
+
+Copyright (c) 1998-2023 Muthen & Muthen

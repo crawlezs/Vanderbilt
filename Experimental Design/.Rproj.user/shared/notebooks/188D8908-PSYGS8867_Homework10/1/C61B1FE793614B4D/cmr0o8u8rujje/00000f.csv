@@ -1,0 +1,7 @@
+"0","help(""voting"", package = ""HSAUR2"")"
+"0","data(""voting"", package = ""HSAUR2"")"
+"0",""
+"0","# 15 x 15 matrix"
+"0","# number of times 15 congressman from NJ voted differently in HOR on 19 environmental bills"
+"0",""
+"0","data <- voting"

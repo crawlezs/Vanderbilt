@@ -1,0 +1,4 @@
+"0","result<-mds.random(data = Data,k=2,r=25)"
+"2","Error in mds(data, k, type = type, init = ""random"") : 
+  could not find function ""mds""
+"

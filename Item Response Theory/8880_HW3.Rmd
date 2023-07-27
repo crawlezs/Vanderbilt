@@ -1,0 +1,75 @@
+---
+title: "8880_HW3"
+output: html_document
+date: "2023-03-01"
+---
+#Set up
+```{r}
+## Call libraries eRm, ltm, and mirt
+library(eRm)
+library(ltm)
+library(mirt)
+```
+
+```{r}
+## Importing polytomous data
+poly <- read.csv("HW 3/data.csv",header=TRUE)
+poly[1:10,1:10] # Checking the first 10 rows and 10 columns
+```
+
+#Q1
+Report item parameter estimates and standard errors of a graded response model
+
+```{r}
+## Fitting a graded response model using 'mirt'
+# Item parameters
+ 
+grm <- mirt(poly, 1, itemtype='graded', method="EM", SE=TRUE)
+coef.grm <-coef(grm, printSE=TRUE, as.data.frame=TRUE)
+coef.grm
+```
+
+```{r}
+# Person parameters
+theta<-fscores(grm, full.scores.SE=TRUE) 
+theta[1:10,]
+write.table(theta, file="HW 3/theta.txt", sep = "\t", row.names=F)
+```
+
+#Q2 
+Create and interpret item characteristic curves (ICCs) for a graded response model for three items having distinct patterns
+
+```{r}
+# CCC
+itemplot(grm, 3) #CCC for item 3 - level: low
+itemplot(grm, 15) #CCC for item 15 - level: medium
+itemplot(grm, 2) #CCC for item 2 - level: high
+```
+
+#Q3
+Compare a target information curve you designed with test information curve from your real responses for a graded response model.
+
+```{r}
+# Item & test Information functions
+plot(grm, type = 'info') #test information for all items
+```
+
+#Q4
+Discuss the differences of the item location estimates between a general partial credit model and a graded response model
+
+```{r}
+## Fitting a graded response model using 'mirt'
+# Item parameters
+ 
+grm <- mirt(poly, 1, itemtype='graded', method="EM", SE=TRUE)
+coef.grm <-coef(grm, printSE=TRUE, as.data.frame=TRUE)
+coef.grm
+```
+
+```{r}
+## Fitting a generalized partial credit model using 'ltm': Marginal MLE
+# Item parameters
+gpcm <- gpcm(poly, IRT.param = TRUE)
+gpcm
+```
+

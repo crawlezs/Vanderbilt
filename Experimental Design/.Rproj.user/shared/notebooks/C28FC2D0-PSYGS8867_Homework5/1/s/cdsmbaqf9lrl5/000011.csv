@@ -1,0 +1,1 @@
+"0","text(result$points[,1],result$points[,2],labels=rownames(result$points),cex=.7,pos=2)"

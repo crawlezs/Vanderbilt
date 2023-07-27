@@ -1,0 +1,7 @@
+"0","# Item fit"
+"0","itemfit <- mirt::itemfit(grm, na.rm=TRUE)"
+"2","Data does not contain missing values. Continuing normally
+"
+"2","Sample size after row-wise response data removal: 346
+"
+"0","itemfit"

@@ -1,0 +1,79 @@
+---
+title: "Zoe_CorbettAnalysis"
+output: html_document
+date: '2022-10-30'
+---
+
+```{r setup, include=FALSE}
+library(dplyr) #data wrangling
+library(haven) #data import
+library(tidyverse) # data wrangling
+library(summarytools)
+library(psych) # psych analysis
+library(readxl) # read xlsx 
+```
+
+import dataset
+```{r}
+path <- 
+#"~/R/win-library/4.1/SchoolWork/statcon/Corbett STM Dataset for Preacher_10.7.22 (1).xlsx"
+```
+
+```{r}
+data_original <- read_excel(path)
+```
+
+summary before data removal
+```{r}
+summary(data_original)
+```
+
+```{r}
+### Youjin's Code as of 10/30/22 ###
+
+#calculate the number of missing values per participant
+table(rowSums(is.na(data_original))) #max of 6 missing values per participant
+
+data_original %>%
+  filter(rowSums(is.na(data_original))>0) %>%
+  view() 
+##44 participants have at least two missing values
+#(1) 4 students do not have any intervention data (will be removed)
+#(2) From (1), 4 students additionally do not have pre-test data (remove?)
+#(3) From (1), 22 students additionally do not have post-test data (but 6 of them have follow-up data)
+
+    ##investigate missing data
+    missing <- data_original %>%
+      filter(rowSums(is.na(data_original))>0)
+    
+    summary(missing)
+    freq(missing$group) # more people in control have missing data
+    freq(missing$sex) # more males have missing data
+    
+```
+
+### data removal procedure ###
+1. remove 4 participants with no clinical data
+
+```{r}
+#summary of missing data
+data_original[!complete.cases(data_original),]
+```
+
+# rows w/o clinical data: 53, 55, 56, 198
+```{r}
+#remove participants w/o clinical data
+data_01 <- data_original[-c(53, 55, 56, 198),] 
+```
+
+2. run regressions with complete data (data_01)
+
+3. run regressions with FIML to account for missing data
+# missing = 'fiml', fixed.x = F
+
+non-optimal: listwise deletion
+```{r}
+<- filter(data_original, !is.na(face_rep_pre) & !is.na(face_rep_post) 
+         & !is.na(face_rep_flwp)) 
+```
+

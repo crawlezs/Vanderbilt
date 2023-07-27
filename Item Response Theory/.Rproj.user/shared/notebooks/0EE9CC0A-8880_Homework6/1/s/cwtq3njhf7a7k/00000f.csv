@@ -1,0 +1,4 @@
+"0","#calculate DIF"
+"0","DIF <- lordif(y,group)"
+"2","Error in table(group, resp) : all arguments must have the same length
+"

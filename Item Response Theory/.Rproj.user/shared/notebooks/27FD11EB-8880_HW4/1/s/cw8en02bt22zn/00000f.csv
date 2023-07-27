@@ -1,0 +1,5 @@
+"0","## Person fit"
+"0","personfit <- mirt::personfit(grm, na.rm=TRUE)"
+"2","Data does not contain missing values. Continuing normally
+"
+"0","personfit"

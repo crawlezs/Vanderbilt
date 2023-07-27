@@ -1,0 +1,187 @@
+---
+title: "Miles et al (2015) Code"
+output: html_document
+date: "2023-07-11"
+---
+doi:10.1108/JCP-02-2015-0010.
+
+
+
+# The effect of gender on delinquency
+del (delinquency, the outcome) is regressed on male (the predictor). The intercept of del is requested by regressing del on a constant value of 1 – this is written as del ~ 1
+```{r}
+model1 <- “
+  del ~ male
+  del ~ 1
+  ” 
+
+fit1 <- sem(model1, data=d) 
+summary(fitModel1)
+```
+
+In the multiple group approach only the mean of each variable is estimated, and the effect of gender is calculated by finding the difference between the two means.When a multiple group model is estimated two parameter labels are needed (one for each group), and these are combined into a vector using the c() function (c being short for ‘combine’)
+```{r}
+model2 <- “
+  del ~ c(maleMean, femaleMean) * 1 
+  diff:= maleMean – femaleMean” 
+
+fit2 <- sem(model2, data=d, group=“male”)
+summary(fit2)
+```
+
+# Evaluating the gender-moderated relationship between parental respect and delinquency
+
+In the first moderated model focused on the association between parental respect and delinquency, and considered whether the association is moderated by gender. The model can again be estimated using a regression based approach – by creating a multiplicative interaction term, or using multiple groups.
+```{r}
+d$maleXResp <- d$male * d$respect
+
+model3 <- “
+  del ~ b1 * respect + b2 * male + b3 * maleXResp”
+
+fit3 <- sem(model3, data=d, estimator=“mlr”)
+summary(fit3)
+```
+
+This moderator model can also be estimated using a multiple group approach. The regression approach gave the slope for females, and the difference between males and females, and a line was added to the model to calculate the slope for males. The multiple group approach estimates the slope for males (which is labelled b1m) and the slope for females ( b1f). A new parameter is defined to calculate the difference between these two values ( diffSlopes).
+```{r}
+model4 <- “
+  del ~ c(b1m, b1f) * respect
+  diffSlopes:= b1m – b1f” 
+  
+fit4 <- sem(model4, data=d, group=“male”)
+summary(fit4)
+```
+
+# Evaluating whether parental respect mediates the association between gender and delinquency
+
+he next mediation model attempts to disentangle the association between gender and delinquency, determining if it is, in part or in whole, explained by parental respect. When estimating Model 1 it was established that the total effect (c in Figure 1) is equal to 0.069 and therefore ab + c′ = 0.069. Again, the mediation model can be estimated using a multiple group approach, or a single group approach.
+```{r}
+model5 <- “
+  del ~ b * respect + cprime * male
+  respect ~ a * male
+  ab:= a * b
+  c:= ab + cprime” 
+  
+fit5 <- sem(model5, data=d, se=“bootstrap”)
+summary(fit5)
+```
+
+One additional complication is that it is necessary to refer to the intercept of respect, and hence the fixed.x=FALSE argument must be added to the call to sem(). In the following code, the values of b (that is, the effects from respect to delinquency) are constrained to be equal across groups. The intercepts of delinquency are labelled delIntMale and delIntFemale, and so c′ ( cprime in the model) is the difference between these two values, and this represents the indirect effect of male on delinquency.
+```{r}
+model6 <- “
+  del ~ c(b, b) * respect
+  del ~ c(delIntMale, delIntFemale) * 1
+  respect ~ c(respMeanMale, respMeanFemale) * 1
+  
+  a:= respMeanMale – respMeanFemale
+  ab:= a * b
+  cprime:= delIntMale – delIntFemale
+  c:= a * b + cprime”
+  
+fit6 <- sem(model6, data=d, group = “male”, fixed.x=FALSE, + se=“bootstrap”)
+summary(fit6)
+```
+
+# Evaluating moderated mediation 
+```{r}
+#insert image
+knitr::include_graphics("MilesFig5.png")
+```
+
+That respect moderates the association between gender and delinquency, and that gender mediates the association between respect and delinquency has been establish.
+The path b now represents the path from respect to delinquency for the females. The b′ parameter is the difference between the male and female paths, and hence the regression of delinquency on respect for males is given by b + b′. The indirect effect of the predictor male is given by a * b. An indirect effect for each group can be calculated. For the females, the indirect effect is given by a * b, for the males, the effect is a * (b + b′). The code and output is shown below. The difference in the indirect effects – that is the moderated mediation effect – is given by the difference between the indirect effect for males and the indirect effect for females, labelled as indDiff in the model.
+
+```{r}
+model7 <- “
+  del ~ cprime * male
+  del ~ b * respect
+  del ~ bprime * maleXResp
+
+  respect ~ a * male
+  respect ~~ maleXResp
+  male ~~ maleXResp
+  
+  bmale:= b + bprime
+  indMale:= bmale * a
+  indFemale:= b * a
+  indDiff:= indMale – indFemale”
+  
+fit7 <- sem(model7, data=d, fixed.x=FALSE, + se=“bootstrap”)
+summary(fit7)
+```
+
+, the model can also be estimated using a multiple group approach. This approach is more intuitive, with somewhat clearer interpretation of parameters. Only small changes are required to modify the previous multiple group model (model 6). The parameter b is estimated for the males and the females separately, and the effects of gender are estimated by subtracting means (or intercepts) as in the previous models.
+
+```{r}
+#insert image
+knitr::include_graphics("MilesFig6.png")
+```
+
+```{r}
+model8 <- “
+  del ~ c(bMale, bFemale) * respect
+  del ~ c(delIntMale, delIntFemale) * 1
+  respect ~ c(respMeanMale, respMeanFemale) * 1
+  
+  a:= respMeanMale – respMeanFemale
+  abMale:= a * bMale
+  abFemale:= a * bFemale
+  bPrime:= bMale – bFemale
+  intDiff:= abMale – abFemale” 
+  
+fit8 <- sem(model8, data=d, group = “male”, fixed.x=FALSE, + se=“bootstrap”)
+summary(fit8)
+```
+
+# Evaluating additional outcome
+One advantage of a structural equation modeling approach is that it allows us to estimate multivariate models with multiple outcome variables simultaneously where these measures might be considered parts of a multivariate system. Such an approach can also increase statistical power (Cole et al., 1993, Cole et al., 1994). An additional outcome variable, mental health functioning (MHI), is added to the models to demonstrate how a multivariate test is carried out. For each parameter of the model which is represented by a regression path to delinquency (i.e. a, b and b′) a value for delinquency and a value for mental health functioning is estimated. To indicate these paths in the model, ‘D’ is added to the path for delinquency, and ‘M’ is added to the path for MHI. In addition, add a covariance in the residual correlation of delinquency and MHI is added using ‘ del ~~ mhi’.
+```{r}
+model9 <- “
+  del ~ cprimeD * male
+  del ~ bD * respect
+  del ~ bprimeD * maleXResp
+  
+  mhi ~ cprimeM * male
+  mhi ~ bM * respect
+  mhi ~ bprimeM * maleXResp
+  
+  mhi ~~ del
+  
+  respect ~ a * male
+  respect ~~ maleXResp
+  male ~~ maleXResp
+  bmaleD:= bD + bprimeD
+  indMaleD:= bmaleD * a
+  indFemaleD:= bD * a
+  indDiffD:= indMaleD – indFemaleD
+  
+  bmaleM:= bM + bprimeM
+  indMaleM:= bmaleM * a
+  indFemaleM:= bM * a
+  indDiffM:= indMaleM – indFemaleM” 
+  
+fit9 <- sem(model9, data=d, fixed.x=FALSE, + se=“bootstrap”)
+summary(fit9)
+```
+
+# Controlling for potentially confounding variables
+To add these variables as covariates, the three endogenous variables (delinquency, mental health functioning and parental respect) are regressed on each of the covariates, and the exogenous variables (male and the male * respect interaction term) are correlated with the covariates. In addition, correlations between the covariates are added. One advantage of modeling in a statistical environment such as R is that models can be expanded, without rewriting the whole model. In the example below, model11 is created by adding the additional parameters to model9, using the paste0() function. Note that for model11, only the derived parameters are reported.
+
+```{r}
+model11 <- paste0(model9, “
+  mhi ~ hisp + asian + other + momed + age
+  del ~ hisp + asian + other + momed + age
+  respect ~ hisp + asian + other + momed + age
+  
+  maleXResp ~~ hisp + asian + other + momed + age
+  
+  male ~~ hisp + asian + other + momed + age
+  hisp ~~ asian + other + momed + age
+  asian ~~ other + momed + age 
+  other ~~ momed + age
+  momed ~~ age”)
+
+fit11 <- sem(model11, data=d, fixed.x=FALSE, se=“bootstrap”)
+summary(fit11)
+```
+

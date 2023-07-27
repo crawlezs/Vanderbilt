@@ -1,0 +1,76 @@
+!! Code from Stride et al (2015) 
+
+TITLE:	Moderated mediation analysis of play-2-cope data, based on PROCESS model 74
+DATA: 	FILE IS model3.dat;
+
+! X - Pftrait
+! Y1 - EWB
+! Y2 - Stress
+! Y3 - Physical Change
+! M1 - COVID Outlook
+! M2 - COVID Risk Stress
+! M3 - Neg PM
+! M4 - Social Support Total
+! M5 - Resilience
+! M6 - Loneliness/Isolation
+
+VARIABLE: 	NAMES ARE X Y1-Y3 M1-M6;
+	USEVARIABLES ARE X Y1-Y3 M1-M6 XM1-XM4 XM6;
+
+DEFINE: 
+   XM1 = X * M1;
+   XM2 = X * M2;
+   XM3 = X * M3;
+   XM4 = X * M4;
+   !XM5 = X * M5;
+   XM6 = X * M6;
+ 
+ANALYSIS:
+   TYPE = GENERAL;
+   ESTIMATOR = ML;
+   BOOTSTRAP = 10000;
+   
+! In model statement name each path using parentheses
+MODEL:
+   Y1 ON X XM1 XM2 XM3 XM4 XM6;
+   Y2 ON X XM1 XM2 XM3 XM4 XM6;
+   Y3 ON X XM1 XM2 XM3 XM4 XM6;
+   
+   Y1 ON M1 (b1_1);
+   Y2 ON M1 (b1_2);
+   Y3 ON M1 (b1_3);
+   
+   Y1 ON M2 (b2_1);
+   Y2 ON M2 (b2_2);
+   Y3 ON M2 (b2_3); 
+   
+   Y1 ON M3 (b3_1);
+   Y2 ON M3 (b3_2);
+   Y3 ON M3 (b3_3);
+   
+   Y1 ON M4 (b4_1);
+   Y2 ON M4 (b4_2);
+   Y3 ON M4 (b4_3);
+   
+   Y1 ON M5 (b5_1);
+   Y2 ON M5 (b5_2);
+   Y3 ON M5 (b5_3);
+   
+   Y1 ON M6 (b6_1);
+   Y2 ON M6 (b6_2);
+   Y3 ON M6 (b6_3);
+   
+   M1 ON X (a1);
+   M2 ON X (a2);
+   M3 ON X (a3);
+   M4 ON X (a4);
+   M5 ON X (a5);
+   M6 ON X (a6);
+   
+   Y1 ON X (cdash1);   ! direct effect of X on Y1
+   Y2 ON X (cdash2);   ! direct effect of X on Y2
+   Y3 ON X (cdash3);   ! direct effect of X on Y3
+
+
+OUTPUT:
+   STAND CINT(bcbootstrap);
